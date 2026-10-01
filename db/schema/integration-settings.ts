@@ -31,6 +31,21 @@ export const integrationSettings = pgTable("integration_settings", {
   googleLastTestOk: boolean("google_last_test_ok"),
   googleLastTestError: text("google_last_test_error"),
 
+  // Which backend delivers browser/OS push: "pusher" (Pusher Beams) or
+  // "webpush" (standard Web Push with VAPID keys, no third party). Null falls
+  // back to PUSH_PROVIDER, then "pusher" — see getPushProvider().
+  pushProvider: text("push_provider"),
+
+  // Web Push (VAPID) — public key is served to the browser via
+  // /api/config/client; private key is server-only.
+  webPushVapidPublicKey: text("web_push_vapid_public_key"),
+  webPushVapidPrivateKeyEncrypted: text("web_push_vapid_private_key_encrypted"),
+  webPushLastTestedAt: timestamp("web_push_last_tested_at", {
+    withTimezone: true,
+  }),
+  webPushLastTestOk: boolean("web_push_last_test_ok"),
+  webPushLastTestError: text("web_push_last_test_error"),
+
   // Pusher Beams (browser/OS push)
   pusherBeamsInstanceId: text("pusher_beams_instance_id"),
   pusherBeamsSecretKeyEncrypted: text("pusher_beams_secret_key_encrypted"),

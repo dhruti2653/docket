@@ -204,7 +204,8 @@ Ticket **descriptions** (submit form) and **replies** (both customer and agent) 
   the single-row `integration_settings` table (`db/schema/integration-settings.ts`).
 - **Resolution rule:** `lib/integration-settings.ts` exports one getter per
   integration (`getSmtpSettings()`, `getGoogleOAuthSettings()`,
-  `getPusherBeamsSettings()`, `getPusherChannelsSettings()`,
+  `getPusherBeamsSettings()`, `getPushProvider()`, `getWebPushSettings()`,
+  `getPusherChannelsSettings()`,
   `getStorageSettings()`, plus `getPusherClientConfig()` for public-only
   browser values). Each: DB value wins per field, env var is the fallback —
   so a value saved via Integrations overrides `.env`, and an install that only
@@ -215,7 +216,14 @@ Ticket **descriptions** (submit form) and **replies** (both customer and agent) 
   never returns plaintext secrets — only `has<Field>: boolean`.
 - **Applies live (no restart), per-call DB read:** SMTP (`lib/smtp/client.ts`),
   Pusher Channels/Beams server-side (`lib/realtime.ts`, `lib/push.ts` —
-  deliberately no permanent client singleton), storage driver (`lib/storage.ts`).
+  deliberately no permanent client singleton), the push provider switch and
+  Web Push VAPID keys (`lib/push.ts` → `lib/web-push.ts`), storage driver
+  (`lib/storage.ts`).
+- **Push provider:** OS push goes through `publishPushToUsers()` in `lib/push.ts`,
+  which dispatches to Pusher Beams or standard Web Push per the admin's choice
+  (`integration_settings.push_provider`). Never call Beams or `web-push`
+  directly from a route. Both share `public/service-worker.js` (one SW / one
+  push subscription per scope). See `docs/in-app-notifications.md`.
 - **Google OAuth is the one exception:** `lib/auth.ts` builds `betterAuth()`
   once, synchronously, at module evaluation (`socialProviders` is baked into
   the singleton via a top-level `await getGoogleOAuthSettings()`) — changing

@@ -445,11 +445,12 @@ export async function POST(
         ticketNumber: ticketData.ticketNumber,
       }).catch((err) => console.error("[notification.customer_replied]", err));
 
-      // OS-level push (no-op unless Pusher Beams is configured).
+      // OS-level push (Pusher Beams or Web Push, whichever is selected; no-op unless configured).
       await publishPushToUsers(recipientIds, {
         title: notifTitle,
         body: contentText.slice(0, 120),
         deepLink: `${env.NEXT_PUBLIC_APP_URL}/tickets/${ticketData.ticketNumber}`,
+        tag: `ticket-${ticketData.ticketNumber}`,
       }).catch((err) => console.error("[push.customer_replied]", err));
     }
 

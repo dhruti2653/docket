@@ -9,6 +9,21 @@ Anything needing manual work on upgrade is called out under **Upgrade notes**.
 
 ## [Unreleased]
 
+### Added
+
+- **Web Push as an alternative to Pusher Beams** for OS-level agent notifications.
+  **Admin → Integrations → Push Notifications** now has a provider dropdown, and it shows
+  only the chosen provider's settings. Web Push uses the browser's built-in push service
+  directly, so it needs no third-party account. A **Generate keys** button creates the
+  VAPID key pair, and **Test connection** sends a real notification to the admin's own
+  browser. Both providers cover every agent notification (new tickets and customer replies).
+
+### Upgrade notes
+
+- Run migrations (`pnpm db:migrate`, or automatic on container start). They add the
+  `push_subscriptions` table and new `integration_settings` columns. Existing Pusher Beams
+  setups keep working unchanged, because the provider defaults to `pusher`.
+
 ## [0.5.0] - 2026-08-27
 
 ### Added

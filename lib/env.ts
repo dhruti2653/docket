@@ -23,6 +23,16 @@ const envSchema = z.object({
   EMAIL_WEBHOOK_SECRET: optionalString,
   GOOGLE_CLIENT_ID: optionalString,
   GOOGLE_CLIENT_SECRET: optionalString,
+  // Push provider for browser/OS notifications: "pusher" (Beams, below) or
+  // "webpush" (standard Web Push, VAPID keys below). Defaults to "pusher".
+  PUSH_PROVIDER: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.enum(["pusher", "webpush"]).optional()
+  ),
+  // Web Push / VAPID (optional) — generate a pair with `npx web-push
+  // generate-vapid-keys` or from Admin → Integrations.
+  WEB_PUSH_VAPID_PUBLIC_KEY: optionalString,
+  WEB_PUSH_VAPID_PRIVATE_KEY: optionalString,
   // Pusher Beams (optional) — browser/OS push for agent notifications.
   NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID: optionalString,
   PUSHER_BEAMS_SECRET_KEY: optionalString,

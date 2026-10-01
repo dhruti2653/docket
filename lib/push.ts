@@ -1,6 +1,11 @@
 import { createHmac } from "node:crypto";
 import PushNotifications from "@pusher/push-notifications-server";
-import { getPusherBeamsSettings } from "@/lib/integration-settings";
+import {
+  getPusherBeamsSettings,
+  getPushProvider,
+  getWebPushSettings,
+} from "@/lib/integration-settings";
+import { sendWebPushToUsers } from "@/lib/web-push";
 
 // Tolerance (seconds) subtracted from the token's `iat` so that a dev machine
 // whose clock runs slightly ahead of Pusher's servers doesn't get the token
@@ -29,9 +34,11 @@ async function getClient(): Promise<PushNotifications | null> {
   });
 }
 
-/** Whether Pusher Beams push is configured for this instance. */
+/** Whether the selected push provider (Pusher Beams or Web Push) is configured. */
 export async function isPushConfigured(): Promise<boolean> {
-  return (await getPusherBeamsSettings()) !== null;
+  return (await getPushProvider()) === "webpush"
+    ? (await getWebPushSettings()) !== null
+    : (await getPusherBeamsSettings()) !== null;
 }
 
 /** Beams device-association token for a user. The HS256 JWT is built by hand
@@ -68,15 +75,30 @@ export async function generateBeamsToken(
   return { token: `${signingInput}.${signature}` };
 }
 
-/** Send a browser/OS push to the given users. No-op when Beams isn't configured.
- * Best-effort: never throws to the caller (who should still `.catch`). */
+/** Send a browser/OS push to the given users via whichever provider the admin
+ * selected (Admin → Integrations → Push Notifications). No-op when that
+ * provider isn't configured. Best-effort: callers should still `.catch`. */
 export async function publishPushToUsers(
   userIds: string[],
-  data: { title: string; body: string; deepLink?: string }
+  data: { title: string; body: string; deepLink?: string; tag?: string }
 ): Promise<void> {
-  const c = await getClient();
   const ids = [...new Set(userIds)].filter(Boolean);
-  if (!c || ids.length === 0) {
+  if (ids.length === 0) {
+    return;
+  }
+
+  if ((await getPushProvider()) === "webpush") {
+    await sendWebPushToUsers(ids, {
+      title: data.title,
+      body: data.body,
+      url: data.deepLink,
+      tag: data.tag,
+    });
+    return;
+  }
+
+  const c = await getClient();
+  if (!c) {
     return;
   }
 

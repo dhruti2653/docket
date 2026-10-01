@@ -321,6 +321,7 @@ export async function createTicketFromSubmission(
       title: notifTitle,
       body: subject,
       deepLink: `${env.NEXT_PUBLIC_APP_URL}/tickets/${inserted.ticketNumber}`,
+      tag: `ticket-${inserted.ticketNumber}`,
     }).catch((err) => console.error("[push.ticket_created]", err));
 
     // Live-refresh any agent currently viewing the ticket list (no-op unless

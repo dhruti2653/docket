@@ -16,7 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { GoogleOAuthSettingsForm } from "@/app/(admin)/admin/integrations/_components/google-oauth-settings-form";
-import { PusherBeamsSettingsForm } from "@/app/(admin)/admin/integrations/_components/pusher-beams-settings-form";
+import { PushNotificationsSettingsForm } from "@/app/(admin)/admin/integrations/_components/push-notifications-settings-form";
 import { PusherChannelsSettingsForm } from "@/app/(admin)/admin/integrations/_components/pusher-channels-settings-form";
 import { SmtpSettingsForm } from "@/app/(admin)/admin/integrations/_components/smtp-settings-form";
 import { StorageSettingsForm } from "@/app/(admin)/admin/integrations/_components/storage-settings-form";
@@ -48,6 +48,14 @@ const EMPTY_INTEGRATION_SETTINGS: IntegrationSettingsSummary = {
   google: {
     clientId: "",
     hasClientSecret: false,
+    lastTestedAt: null,
+    lastTestOk: null,
+    lastTestError: null,
+  },
+  push: { provider: "pusher" },
+  webPush: {
+    publicKey: "",
+    hasPrivateKey: false,
     lastTestedAt: null,
     lastTestOk: null,
     lastTestError: null,
@@ -566,9 +574,9 @@ function IntegrationsStep({ onFinish }: { onFinish: () => void }) {
           collapsible
           initial={EMPTY_INTEGRATION_SETTINGS.pusherChannels}
         />
-        <PusherBeamsSettingsForm
+        <PushNotificationsSettingsForm
           collapsible
-          initial={EMPTY_INTEGRATION_SETTINGS.pusherBeams}
+          initial={EMPTY_INTEGRATION_SETTINGS}
         />
         <StorageSettingsForm
           collapsible

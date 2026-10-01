@@ -20,3 +20,4 @@ export * from "@/db/schema/webhooks";
 export * from "@/db/schema/webhook-deliveries";
 export * from "@/db/schema/sla-policies";
 export * from "@/db/schema/reply-drafts";
+export * from "@/db/schema/push-subscriptions";

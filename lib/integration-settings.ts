@@ -95,6 +95,52 @@ export async function getPusherBeamsSettings(): Promise<PusherBeamsSettings | nu
   return { instanceId, secretKey };
 }
 
+export type PushProvider = "pusher" | "webpush";
+
+/** Which backend delivers browser/OS push. DB wins, then PUSH_PROVIDER, then
+ * "pusher" — so installs that predate the switch keep using Beams. */
+export async function getPushProvider(): Promise<PushProvider> {
+  const row = await getRow();
+  const value = nonEmpty(row?.pushProvider) ?? env.PUSH_PROVIDER;
+  return value === "webpush" ? "webpush" : "pusher";
+}
+
+export interface WebPushSettings {
+  privateKey: string;
+  publicKey: string;
+  subject: string;
+}
+
+/** VAPID requires an https: or mailto: contact. It isn't admin-configurable:
+ * the app URL qualifies in production; a plain-http dev URL doesn't, so fall
+ * back to a mailto there. */
+export function vapidSubject(): string {
+  const url = new URL(env.NEXT_PUBLIC_APP_URL);
+  return url.protocol === "https:"
+    ? url.origin
+    : `mailto:admin@${url.hostname}`;
+}
+
+/** VAPID keys — pair-wise resolution, not per-field: a DB public key with an
+ * env private key would be a mismatched pair, so the DB pair wins only when
+ * both halves are saved there. */
+export async function getWebPushSettings(): Promise<WebPushSettings | null> {
+  const row = await getRow();
+  const dbPublicKey = nonEmpty(row?.webPushVapidPublicKey);
+  const dbPrivateKey = row?.webPushVapidPrivateKeyEncrypted
+    ? decryptSecret(row.webPushVapidPrivateKeyEncrypted)
+    : undefined;
+
+  const [publicKey, privateKey] =
+    dbPublicKey && dbPrivateKey
+      ? [dbPublicKey, dbPrivateKey]
+      : [env.WEB_PUSH_VAPID_PUBLIC_KEY, env.WEB_PUSH_VAPID_PRIVATE_KEY];
+  if (!(publicKey && privateKey)) {
+    return null;
+  }
+  return { publicKey, privateKey, subject: vapidSubject() };
+}
+
 export interface PusherChannelsSettings {
   appId: string;
   cluster: string;
@@ -122,6 +168,8 @@ export interface PusherClientConfig {
   beamsInstanceId: string | null;
   pusherCluster: string | null;
   pusherKey: string | null;
+  pushProvider: PushProvider;
+  vapidPublicKey: string | null;
 }
 
 /** Public identifiers only, no secrets — served unauthenticated via
@@ -129,14 +177,22 @@ export interface PusherClientConfig {
  * needing NEXT_PUBLIC_* baked in at Docker build time. */
 export async function getPusherClientConfig(): Promise<PusherClientConfig> {
   const row = await getRow();
+  const pushProvider = await getPushProvider();
   return {
+    pushProvider,
+    vapidPublicKey:
+      pushProvider === "webpush"
+        ? ((await getWebPushSettings())?.publicKey ?? null)
+        : null,
     pusherKey: nonEmpty(row?.pusherKey) ?? env.NEXT_PUBLIC_PUSHER_KEY ?? null,
     pusherCluster:
       nonEmpty(row?.pusherCluster) ?? env.NEXT_PUBLIC_PUSHER_CLUSTER ?? null,
     beamsInstanceId:
-      nonEmpty(row?.pusherBeamsInstanceId) ??
-      env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID ??
-      null,
+      pushProvider === "pusher"
+        ? (nonEmpty(row?.pusherBeamsInstanceId) ??
+          env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID ??
+          null)
+        : null,
   };
 }
 
@@ -213,7 +269,7 @@ export async function getStorageSettings(): Promise<StorageSettings> {
 }
 
 /** Result of the last credential check for a section that supports one (SMTP,
- * Google, Pusher Channels, Pusher Beams) — see lib/integration-test.ts.
+ * Google, Pusher Channels, Pusher Beams, Web Push) — see lib/integration-test.ts.
  * `lastTestOk` is null until the first check ever runs, and reset to null
  * whenever the section becomes incomplete. */
 export interface LastTestResult {
@@ -224,6 +280,7 @@ export interface LastTestResult {
 
 export interface IntegrationSettingsSummary {
   google: { clientId: string; hasClientSecret: boolean } & LastTestResult;
+  push: { provider: PushProvider };
   pusherBeams: { instanceId: string; hasSecretKey: boolean } & LastTestResult;
   pusherChannels: {
     appId: string;
@@ -250,6 +307,10 @@ export interface IntegrationSettingsSummary {
     hasR2SecretAccessKey: boolean;
     publicBaseUrl: string;
   };
+  webPush: {
+    publicKey: string;
+    hasPrivateKey: boolean;
+  } & LastTestResult;
 }
 
 /** Prefills the /admin/integrations forms with what the admin typed and saved,
@@ -274,6 +335,16 @@ export async function getIntegrationSettingsSummary(): Promise<IntegrationSettin
       lastTestedAt: row?.googleLastTestedAt?.toISOString() ?? null,
       lastTestOk: row?.googleLastTestOk ?? null,
       lastTestError: row?.googleLastTestError ?? null,
+    },
+    // Resolved (DB → env → default) rather than raw, unlike the fields
+    // below: a dropdown has no "blank" state to show an env-set value as.
+    push: { provider: await getPushProvider() },
+    webPush: {
+      publicKey: row?.webPushVapidPublicKey ?? "",
+      hasPrivateKey: !!row?.webPushVapidPrivateKeyEncrypted,
+      lastTestedAt: row?.webPushLastTestedAt?.toISOString() ?? null,
+      lastTestOk: row?.webPushLastTestOk ?? null,
+      lastTestError: row?.webPushLastTestError ?? null,
     },
     pusherBeams: {
       instanceId: row?.pusherBeamsInstanceId ?? "",

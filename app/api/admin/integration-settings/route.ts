@@ -6,15 +6,20 @@ import { audit } from "@/lib/audit";
 import { requireAdminFromRequest } from "@/lib/authz";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { db } from "@/lib/db";
-import { getIntegrationSettingsSummary } from "@/lib/integration-settings";
+import {
+  getIntegrationSettingsSummary,
+  vapidSubject,
+} from "@/lib/integration-settings";
 import {
   testGoogleOAuthCredentials,
   testPusherBeamsConnection,
   testPusherChannelsConnection,
   testSmtpConnection,
 } from "@/lib/integration-test";
+import { clearAllWebPushSubscriptions, testWebPushKeys } from "@/lib/web-push";
 
 const VALID_STORAGE_DRIVERS = new Set(["local", "s3", "r2"]);
+const VALID_PUSH_PROVIDERS = new Set(["pusher", "webpush"]);
 
 // GET — agent/admin can read (middleware already enforced /api/admin/* access).
 // Secret fields are never sent back to the browser — only whether one is set.
@@ -51,6 +56,7 @@ function compact<T extends Record<string, unknown>>(obj: T): Partial<T> {
 
 interface PatchBody {
   google?: { clientId?: unknown; clientSecret?: unknown };
+  push?: { provider?: unknown };
   pusherBeams?: { instanceId?: unknown; secretKey?: unknown };
   pusherChannels?: {
     appId?: unknown;
@@ -77,10 +83,12 @@ interface PatchBody {
     r2SecretAccessKey?: unknown;
     publicBaseUrl?: unknown;
   };
+  webPush?: { publicKey?: unknown; privateKey?: unknown };
 }
 
 // PATCH — admin only. Partial update, one section (smtp/google/pusherBeams/
-// pusherChannels/storage) at a time; only fields present in that section's
+// pusherChannels/webPush/storage) at a time — `push` (the provider choice) may
+// accompany pusherBeams or webPush; only fields present in that section's
 // object are changed. Within a section: key omitted = unchanged, "" = clear,
 // non-empty = set (encrypted for secret fields).
 export async function PATCH(request: NextRequest) {
@@ -105,7 +113,11 @@ export async function PATCH(request: NextRequest) {
   // Only the testable sections need the existing row (to merge in an
   // untouched saved secret before testing) — storage doesn't.
   const existing =
-    body.smtp || body.google || body.pusherChannels || body.pusherBeams
+    body.smtp ||
+    body.google ||
+    body.pusherChannels ||
+    body.pusherBeams ||
+    body.webPush
       ? (
           await db
             .select()
@@ -239,6 +251,59 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  if (body.push) {
+    if (!VALID_PUSH_PROVIDERS.has(body.push.provider as string)) {
+      return NextResponse.json(
+        { error: "Invalid push provider." },
+        { status: 400 }
+      );
+    }
+    updates.pushProvider = body.push.provider;
+    auditSections.push("push");
+  }
+
+  let vapidKeysChanged = false;
+  if (body.webPush) {
+    const webPushUpdates = compact({
+      webPushVapidPublicKey: plainField(body.webPush.publicKey),
+      webPushVapidPrivateKeyEncrypted: secretField(
+        typeof body.webPush.privateKey === "string"
+          ? body.webPush.privateKey.trim()
+          : undefined
+      ),
+    });
+    Object.assign(updates, webPushUpdates);
+    auditSections.push("webPush");
+
+    const mergedPublicKey =
+      "webPushVapidPublicKey" in webPushUpdates
+        ? webPushUpdates.webPushVapidPublicKey
+        : existing?.webPushVapidPublicKey;
+    const mergedPrivateKeyEncrypted =
+      "webPushVapidPrivateKeyEncrypted" in webPushUpdates
+        ? webPushUpdates.webPushVapidPrivateKeyEncrypted
+        : existing?.webPushVapidPrivateKeyEncrypted;
+
+    vapidKeysChanged =
+      (mergedPublicKey ?? null) !== (existing?.webPushVapidPublicKey ?? null);
+
+    if (mergedPublicKey && mergedPrivateKeyEncrypted) {
+      const result = testWebPushKeys({
+        publicKey: mergedPublicKey,
+        privateKey: decryptSecret(mergedPrivateKeyEncrypted),
+        subject: vapidSubject(),
+      });
+      updates.webPushLastTestedAt = new Date();
+      updates.webPushLastTestOk = result.ok;
+      updates.webPushLastTestError = result.ok ? null : result.message;
+      testedSections.webPush = result;
+    } else {
+      updates.webPushLastTestedAt = null;
+      updates.webPushLastTestOk = null;
+      updates.webPushLastTestError = null;
+    }
+  }
+
   if (body.pusherChannels) {
     const pusherChannelsUpdates = compact({
       pusherAppId: plainField(body.pusherChannels.appId),
@@ -332,6 +397,12 @@ export async function PATCH(request: NextRequest) {
       target: integrationSettings.id,
       set: { ...updates, updatedAt: now },
     });
+
+  // Browsers bind each subscription to the public key it was created with, so
+  // a new key pair orphans every saved one; agents re-subscribe on next load.
+  if (vapidKeysChanged) {
+    await clearAllWebPushSubscriptions();
+  }
 
   await audit({
     action: "integration_settings.updated",

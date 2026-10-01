@@ -71,6 +71,13 @@
       "when": 1790846407910,
       "tag": "0009_tense_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790847792794,
+      "tag": "0010_military_joystick",
+      "breakpoints": true
     }
   ]
 }

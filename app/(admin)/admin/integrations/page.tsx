@@ -1,6 +1,6 @@
 import { getIntegrationSettingsSummary } from "@/lib/integration-settings";
 import { GoogleOAuthSettingsForm } from "./_components/google-oauth-settings-form";
-import { PusherBeamsSettingsForm } from "./_components/pusher-beams-settings-form";
+import { PushNotificationsSettingsForm } from "./_components/push-notifications-settings-form";
 import { PusherChannelsSettingsForm } from "./_components/pusher-channels-settings-form";
 import { SmtpSettingsForm } from "./_components/smtp-settings-form";
 import { StorageSettingsForm } from "./_components/storage-settings-form";
@@ -29,7 +29,7 @@ export default async function IntegrationsPage() {
       <SmtpSettingsForm initial={settings.smtp} />
       <GoogleOAuthSettingsForm initial={settings.google} />
       <PusherChannelsSettingsForm initial={settings.pusherChannels} />
-      <PusherBeamsSettingsForm initial={settings.pusherBeams} />
+      <PushNotificationsSettingsForm initial={settings} />
       <StorageSettingsForm initial={settings.storage} />
     </div>
   );

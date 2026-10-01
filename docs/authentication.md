@@ -76,7 +76,7 @@ On a brand-new install (no admin user exists yet), the operator does **not** nee
 1. Any visit to `/` or `/login` redirects to `/setup` while no admin exists (see the `isSetupComplete()` guard in `lib/setup.ts` — "setup is complete" ≡ "at least one `admin` user exists").
 2. The wizard (`app/(setup)/setup`) collects a color theme + appearance in step 1 (live preview via `ThemeProvider`) and the admin's name / email / password in step 2.
 3. `POST /api/setup` creates the admin (via `createAdminUser` in `lib/bootstrap-admin.ts`, the same path as `pnpm create:admin`), seeds default statuses/categories/priorities (`lib/seed-defaults.ts`), and persists the chosen theme to `platform_settings`.
-4. The wizard auto-signs-in with the just-created credentials, then step 3 offers optional SMTP / Google OAuth / Pusher Beams / Pusher Channels / storage setup (same forms as **Admin → Integrations**, skippable and revisitable any time — see `lib/integration-settings.ts`) before landing on `/dashboard`.
+4. The wizard auto-signs-in with the just-created credentials, then step 3 offers optional SMTP / Google OAuth / Pusher Channels / push notifications (Pusher Beams or Web Push) / storage setup (same forms as **Admin → Integrations**, skippable and revisitable any time — see `lib/integration-settings.ts`) before landing on `/dashboard`.
 
 **Security:** `POST /api/setup` and the `/setup` page are intentionally unauthenticated (there's no admin to authenticate as yet) but **self-disabling** — both check `isSetupComplete()` and return `403` / redirect to `/login` the moment an admin exists, so the bootstrap path can never be replayed to mint a second admin on a live install. `pnpm create:admin` remains available as a CLI alternative.
 

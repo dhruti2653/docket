@@ -407,6 +407,24 @@ ticket_reply_drafts
 └── PRIMARY KEY (ticket_id, user_id)
 ```
 
+### `push_subscriptions`
+
+Browser Web Push (VAPID) subscriptions for agents — one row per browser profile. Only used when the push provider is `webpush` (Admin → Integrations → Push Notifications); Pusher Beams keeps its own device registry. Rows are pruned when the push service answers 404/410, and all rows are deleted when the VAPID key pair changes (browsers re-subscribe on next load). See `docs/in-app-notifications.md`.
+
+```
+push_subscriptions
+├── id                 text PRIMARY KEY (cuid2)
+├── user_id            text NOT NULL → user.id (CASCADE DELETE)
+├── endpoint           text NOT NULL UNIQUE   ← push-service URL; upsert key
+├── p256dh             text NOT NULL          ← client public key
+├── auth               text NOT NULL          ← client auth secret
+├── user_agent         text
+├── created_at         timestamp with time zone NOT NULL DEFAULT NOW()
+└── updated_at         timestamp with time zone NOT NULL DEFAULT NOW()
+```
+
+`integration_settings` also gained `push_provider` (`pusher` | `webpush`, null = env/`pusher`) and the Web Push VAPID columns (`web_push_vapid_public_key`, `web_push_vapid_private_key_encrypted`, plus the usual `web_push_last_test_*` trio).
+
 ---
 
 ## Scaffold Tables (already exist)
@@ -438,6 +456,7 @@ db/schema/
 ├── user-preferences.ts ← user_ticket_table_prefs
 ├── api-keys.ts        ← api_keys
 ├── settings.ts        ← platform_settings
+├── push-subscriptions.ts ← push_subscriptions
 ├── audit-logs.ts      ← audit_logs (scaffold)
 ├── email-outbox.ts    ← email_outbox, email_events (scaffold)
 ├── job-logs.ts        ← job_logs (scaffold)

@@ -382,6 +382,7 @@ export async function POST(
       title: notifTitle,
       body: contentText.slice(0, 120),
       deepLink: `${env.NEXT_PUBLIC_APP_URL}/tickets/${ticket.ticketNumber}`,
+      tag: `ticket-${ticket.ticketNumber}`,
     }).catch((err) => console.error("[push.customer_replied]", err));
 
     return NextResponse.json({ id: commentId }, { status: 201 });
