@@ -42,6 +42,8 @@ interface Row {
   assignedAgentName: string | null;
   category: string;
   customerName: string;
+  /** The current agent has an unsent reply draft on this ticket. */
+  hasDraft: boolean;
   id: string;
   priority: string;
   slaSnapshot: SlaSnapshot;

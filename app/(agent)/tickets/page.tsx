@@ -31,6 +31,7 @@ import {
   type TicketPriority,
   type TicketStatus,
 } from "@/lib/ticket-config";
+import { getDraftTicketIds } from "@/lib/tickets/reply-drafts";
 import {
   buildTicketsWhereClause,
   parseTicketListSort,
@@ -308,7 +309,7 @@ async function TicketsResults({
   );
   const ticketIds = rows.map((r) => r.id);
 
-  const [tagsByTicket, updatedByRows] = await Promise.all([
+  const [tagsByTicket, updatedByRows, draftTicketIds] = await Promise.all([
     visibleColumnIds.has("tags")
       ? getTicketTagsForTickets(ticketIds)
       : Promise.resolve({} as Record<string, string[]>),
@@ -327,6 +328,7 @@ async function TicketsResults({
           )
           .orderBy(ticketActivity.ticketId, desc(ticketActivity.createdAt))
       : Promise.resolve([]),
+    getDraftTicketIds(ticketIds, agentId),
   ]);
   const updatedByTicket = Object.fromEntries(
     updatedByRows.map((r) => [r.ticketId, r.actorName])
@@ -338,6 +340,7 @@ async function TicketsResults({
   const rowsWithExtras = rows.map((r) => ({
     ...r,
     tags: tagsByTicket[r.id] ?? [],
+    hasDraft: draftTicketIds.has(r.id),
     updatedByName: updatedByTicket[r.id] ?? null,
     slaSnapshot: computeSlaSnapshot(
       r,

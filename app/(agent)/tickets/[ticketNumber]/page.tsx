@@ -42,6 +42,7 @@ import {
 } from "@/lib/ticket-config";
 import { COLOR_BADGE } from "@/lib/tickets";
 import { canDeleteAttachment } from "@/lib/tickets/attachment-permissions";
+import { getReplyDraft } from "@/lib/tickets/reply-drafts";
 import {
   buildTicketsWhereClause,
   parseTicketListSort,
@@ -266,6 +267,7 @@ export default async function AgentTicketDetailPage({
     prevTicketNumber,
     nextTicketNumber,
     sendReplyOnEnter,
+    replyDraft,
     // showSlaAndOverdue,
   ] = await Promise.all([
     getTicketCategories(),
@@ -289,6 +291,7 @@ export default async function AgentTicketDetailPage({
       adjacentSeekTicket
     ),
     getSendReplyOnEnterPref(session.id),
+    getReplyDraft(ticket.id, session.id),
     // getShowSlaAndOverduePref(session.id),
   ]);
 
@@ -575,8 +578,18 @@ export default async function AgentTicketDetailPage({
               thread so it stays aligned. */}
           {isOpen && (
             <div className="shrink-0 px-4 pb-4 pt-2 lg:px-8 lg:pb-6">
+              {/* Keyed by ticket so Previous/Next remounts the composer —
+                  flushing this ticket's draft and loading the next one's. */}
               <AgentReplyForm
                 cannedResponses={cannedResponses}
+                initialDraft={
+                  replyDraft && {
+                    content: replyDraft.content,
+                    isInternal: replyDraft.isInternal,
+                    updatedAt: replyDraft.updatedAt.toISOString(),
+                  }
+                }
+                key={ticket.id}
                 sendReplyOnEnter={sendReplyOnEnter}
                 ticketId={ticket.id}
                 totalAttachments={attachments.length}

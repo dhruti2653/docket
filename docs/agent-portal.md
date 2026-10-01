@@ -117,6 +117,15 @@ The full ticket view for agents. Split into two panels:
 - Submit button: "Send Reply".
 - After submit: appears in the thread, customer receives an email notification (email/notification previews use a plain-text flattening of the reply).
 
+### Reply Drafts
+
+- The composer auto-saves the agent's unsent reply ~1s after they stop typing (and immediately when they leave the page or move to Previous/Next), to `ticket_reply_drafts` via `PUT /api/tickets/{id}/draft`.
+- Drafts are **per agent, per ticket** — never visible to other agents or the customer — and follow the agent across browsers/devices. The internal-note mode is saved with the text.
+- On returning to the ticket, the draft is restored into the composer. The action bar shows "Saving draft…" / "Draft saved · {time}" / "Couldn't save draft", plus a trash button that discards it (with a confirmation dialog; `DELETE /api/tickets/{id}/draft`).
+- Sending the reply deletes the draft server-side (in the comments route). Clearing the composer also deletes it.
+- Attachments are not drafted — unsent files only live in the browser tab.
+- `/tickets` shows a pencil icon (tooltip "Draft — unsent reply saved", on hover/focus/click) next to the subject of every ticket where the current agent has a saved draft.
+
 ### Internal Note
 
 - Toggled via a tab or toggle above the reply form: "Reply" / "Internal Note".

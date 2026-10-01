@@ -392,6 +392,21 @@ user_ticket_table_prefs
 └── updated_at         timestamp with time zone NOT NULL DEFAULT NOW()
 ```
 
+### `ticket_reply_drafts`
+
+An agent's unsent reply on a ticket, auto-saved by the reply composer. One row per (ticket, agent); deleted when the reply is sent, discarded, or emptied.
+
+```
+ticket_reply_drafts
+├── ticket_id          text NOT NULL → tickets.id (CASCADE DELETE)
+├── user_id            text NOT NULL → user.id (CASCADE DELETE)
+├── content            text NOT NULL   ← Tiptap JSON, same as ticket_comments.content
+├── is_internal        boolean NOT NULL DEFAULT false
+├── created_at         timestamp with time zone NOT NULL DEFAULT NOW()
+├── updated_at         timestamp with time zone NOT NULL DEFAULT NOW()
+└── PRIMARY KEY (ticket_id, user_id)
+```
+
 ---
 
 ## Scaffold Tables (already exist)

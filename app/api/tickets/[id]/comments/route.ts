@@ -25,6 +25,7 @@ import { computeSlaTransition } from "@/lib/sla";
 import { storage } from "@/lib/storage";
 import { isClosedStatusSlug } from "@/lib/ticket-config";
 import { resolveTicketPortalUrl } from "@/lib/tickets/portal-url";
+import { deleteReplyDraft } from "@/lib/tickets/reply-drafts";
 import {
   dispatchWebhookEvent,
   ticketPayloadData,
@@ -268,6 +269,17 @@ export async function POST(
       createdAt: now,
       updatedAt: now,
     });
+
+    // The reply is out — drop the agent's saved draft for this ticket so the
+    // composer and the /tickets "Draft" marker don't resurrect it. Best
+    // effort: the comment row is already written, so a failure here must not
+    // fall into the catch below and report the reply as failed (the agent
+    // would resend it, duplicating the reply).
+    if (authorId && authorRole !== "customer") {
+      await deleteReplyDraft(ticketId, authorId).catch((err) =>
+        console.error("[reply-draft.delete]", err)
+      );
+    }
 
     if (uploadedAttachments.length > 0) {
       await db.insert(ticketAttachments).values(

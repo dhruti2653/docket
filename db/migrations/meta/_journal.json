@@ -64,6 +64,13 @@
       "when": 1787142405547,
       "tag": "0008_rich_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790846407910,
+      "tag": "0009_tense_scarecrow",
+      "breakpoints": true
     }
   ]
 }

@@ -88,6 +88,11 @@ function Tooltip({ children }: { children: ReactNode }) {
     onOpenChange: setOpen,
     open,
     placement,
+    // Position via left/top, not `transform: translate(...)` — the scale-in
+    // below (useTransitionStyles) also writes `transform` and, spread after
+    // these styles on TooltipContent, would wipe the translate and pin every
+    // tooltip to the viewport's top-left corner.
+    transform: false,
     whileElementsMounted: autoUpdate,
   });
 

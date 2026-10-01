@@ -19,3 +19,4 @@ export * from "@/db/schema/email-templates";
 export * from "@/db/schema/webhooks";
 export * from "@/db/schema/webhook-deliveries";
 export * from "@/db/schema/sla-policies";
+export * from "@/db/schema/reply-drafts";
