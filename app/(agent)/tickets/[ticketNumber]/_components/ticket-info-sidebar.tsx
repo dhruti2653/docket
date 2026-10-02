@@ -38,10 +38,13 @@ import {
   COLOR_BADGE,
   formatTicketDateTime,
 } from "@/lib/tickets";
+import { type TicketLinkType, ticketLinkLabel } from "@/lib/tickets/link-types";
+import type { TicketLinkView } from "@/lib/tickets/links";
 import { getInitials } from "@/lib/utils";
 import { CustomerProfilePopover } from "./customer-profile-popover";
 import { SidebarCard } from "./sidebar-card";
 import { TicketCustomFields } from "./ticket-custom-fields";
+import { TicketLinks } from "./ticket-links";
 import { TicketTags } from "./ticket-tags";
 
 type Agent = { id: string; name: string | null; email: string };
@@ -62,6 +65,7 @@ interface Props {
   currentUserId: string;
   customFields: CustomFieldWithValue[];
   isAdmin?: boolean;
+  links: TicketLinkView[];
   priorities: TicketPriority[];
   /** The agent's "Show SLA & Overdue" preference (lib/sla-display-pref.ts) —
    * off shows only the waiting time, not SLA/overdue badges, same as the
@@ -102,6 +106,7 @@ export function TicketInfoSidebar({
   customFields,
   currentUserId,
   isAdmin = false,
+  links,
 }: Props) {
   const statusMap = Object.fromEntries(statuses.map((s) => [s.slug, s]));
   const categoryMap = Object.fromEntries(categories.map((c) => [c.slug, c]));
@@ -145,6 +150,20 @@ export function TicketInfoSidebar({
     custom_field_changed: (a) => {
       const m = a.metadata as { field?: string } | null;
       return `${m?.field ?? "Custom field"} updated`;
+    },
+    ticket_linked: (a) => {
+      const m = a.metadata as {
+        type?: TicketLinkType;
+        direction?: "outgoing" | "incoming";
+        ticketNumber?: number;
+      } | null;
+      return m?.type
+        ? `Link added: ${ticketLinkLabel(m.type, m.direction ?? "outgoing").toLowerCase()} #${m.ticketNumber}`
+        : "Ticket linked";
+    },
+    ticket_unlinked: (a) => {
+      const m = a.metadata as { ticketNumber?: number } | null;
+      return `Link to #${m?.ticketNumber ?? "?"} removed`;
     },
   };
   const router = useRouter();
@@ -467,6 +486,16 @@ export function TicketInfoSidebar({
       {/* Tags */}
       <SidebarCard title="Tags" {...accordionProps("tags")}>
         <TicketTags initialTags={tags} ticketId={ticket.id} />
+      </SidebarCard>
+
+      {/* Linked Tickets */}
+      <SidebarCard title="Linked Tickets" {...accordionProps("links")}>
+        <TicketLinks
+          initialLinks={links}
+          key={ticket.id}
+          statuses={statuses}
+          ticketId={ticket.id}
+        />
       </SidebarCard>
 
       {/* Custom Fields */}

@@ -34,6 +34,7 @@ Docket uses three roles. Customers are not users in the system — they are iden
 | Change ticket status | No | Yes | Yes |
 | Close any ticket | No | Yes | Yes |
 | Reopen any ticket | No | Yes | Yes |
+| Link related tickets | No | Yes | Yes |
 | Delete ticket (spam) | No | No | Yes |
 | View all users | No | No | Yes |
 | Assign user role | No | No | Yes |

@@ -152,6 +152,12 @@ The full ticket view for agents. Split into two panels:
 - No confirmation dialog needed.
 - Status → `open`, activity logged.
 
+### Linked Tickets
+
+- **Linked Tickets** sidebar card — add a "Related to" / "A duplicate of" / "Blocking" link by
+  ticket number, or remove one. Each link shows the other ticket's number, subject and status.
+- Full rules: [tickets.md § Linked Tickets](./tickets.md#linked-tickets).
+
 ---
 
 ## 3. Activity History

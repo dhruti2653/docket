@@ -407,6 +407,25 @@ ticket_reply_drafts
 └── PRIMARY KEY (ticket_id, user_id)
 ```
 
+### `ticket_links`
+
+Agent-only relationships between tickets (see `docs/tickets.md` § Linked Tickets). One row per link, read from both ends; `related_to` is symmetric, `duplicate_of` and `blocks` are directional.
+
+```
+ticket_links
+├── id                 text PRIMARY KEY (cuid2)
+├── ticket_id          text NOT NULL → tickets.id (CASCADE DELETE)
+├── linked_ticket_id   text NOT NULL → tickets.id (CASCADE DELETE)
+├── type               text NOT NULL   ← 'related_to' | 'duplicate_of' | 'blocks'
+├── created_by_id      text → user.id (SET NULL on delete), nullable
+├── created_at         timestamp with time zone NOT NULL DEFAULT NOW()
+└── updated_at         timestamp with time zone NOT NULL DEFAULT NOW()
+
+Indexes:
+- (ticket_id, linked_ticket_id, type) unique
+- linked_ticket_id
+```
+
 ### `push_subscriptions`
 
 Browser Web Push (VAPID) subscriptions for agents — one row per browser profile. Only used when the push provider is `webpush` (Admin → Integrations → Push Notifications); Pusher Beams keeps its own device registry. Rows are pruned when the push service answers 404/410, and all rows are deleted when the VAPID key pair changes (browsers re-subscribe on next load). See `docs/in-app-notifications.md`.
@@ -457,6 +476,7 @@ db/schema/
 ├── api-keys.ts        ← api_keys
 ├── settings.ts        ← platform_settings
 ├── push-subscriptions.ts ← push_subscriptions
+├── ticket-links.ts    ← ticket_links
 ├── audit-logs.ts      ← audit_logs (scaffold)
 ├── email-outbox.ts    ← email_outbox, email_events (scaffold)
 ├── job-logs.ts        ← job_logs (scaffold)

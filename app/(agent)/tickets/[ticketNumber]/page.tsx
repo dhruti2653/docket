@@ -42,6 +42,7 @@ import {
 } from "@/lib/ticket-config";
 import { COLOR_BADGE } from "@/lib/tickets";
 import { canDeleteAttachment } from "@/lib/tickets/attachment-permissions";
+import { getTicketLinks } from "@/lib/tickets/links";
 import { getReplyDraft } from "@/lib/tickets/reply-drafts";
 import {
   buildTicketsWhereClause,
@@ -268,6 +269,7 @@ export default async function AgentTicketDetailPage({
     nextTicketNumber,
     sendReplyOnEnter,
     replyDraft,
+    links,
     // showSlaAndOverdue,
   ] = await Promise.all([
     getTicketCategories(),
@@ -292,6 +294,7 @@ export default async function AgentTicketDetailPage({
     ),
     getSendReplyOnEnterPref(session.id),
     getReplyDraft(ticket.id, session.id),
+    getTicketLinks(ticket.id),
     // getShowSlaAndOverduePref(session.id),
   ]);
 
@@ -607,6 +610,7 @@ export default async function AgentTicketDetailPage({
             currentUserId={session.id}
             customFields={customFields}
             isAdmin={session.role === ADMIN_ROLE}
+            links={links}
             priorities={priorities}
             showSlaAndOverdue={showSlaAndOverdue}
             slaSnapshot={slaSnapshot}

@@ -259,6 +259,7 @@ Every significant action on a ticket is logged in `ticket_activity` for a full a
 | `attachment_added` | File attached |
 | `tag_added` | Tag added to the ticket |
 | `tag_removed` | Tag removed from the ticket |
+| `ticket_linked` / `ticket_unlinked` | A link to another ticket was added/removed (written on both tickets) |
 
 ```
 ticket_activity
@@ -273,6 +274,26 @@ ticket_activity
 ```
 
 Activity history is displayed chronologically on the ticket detail page for agents. Customers see a simplified version (status changes + replies — no internal note activity).
+
+---
+
+## Linked Tickets
+
+Agents connect related tickets from the **Linked Tickets** sidebar card on the ticket detail
+page. Linking moves nothing — it's a reference for agents only and is never shown to
+customers. Logic lives in `lib/tickets/links.ts`.
+
+| Type | On the ticket that added it | On the other ticket |
+|---|---|---|
+| `related_to` | Related to #N | Related to #N |
+| `duplicate_of` | Duplicate of #N | Duplicated by #N |
+| `blocks` | Blocks #N | Blocked by #N |
+
+One `ticket_links` row per link, read from both ends. Rejected: linking a ticket to itself, an
+unknown ticket number, and a second link of the same type between the same pair in either
+direction (so no "A blocks B" plus "B blocks A"). Adding or removing a link writes
+`ticket_linked` / `ticket_unlinked` activity on both tickets. Deleting either ticket deletes
+the link.
 
 ---
 
@@ -304,5 +325,7 @@ Activity history is displayed chronologically on the ticket detail page for agen
 | PATCH | `/api/tickets/{id}/reopen` | Customer (token) / Agent | Reopen the ticket |
 | POST | `/api/tickets/{id}/comments` | Customer (token) / Agent | Add a comment or internal note |
 | DELETE | `/api/tickets/{id}` | Admin only | Hard delete (spam removal) |
+| GET / POST | `/api/tickets/{id}/links` | Agent/Admin | List links / add one (body: `{ ticketNumber, type }`) |
+| DELETE | `/api/tickets/{id}/links/{linkId}` | Agent/Admin | Remove a link (from either end) |
 | PATCH | `/api/tickets/bulk` | Admin only | Bulk assign, change status, change priority, or add a tag across up to 200 tickets at once (body: `{ ids, action: "assign" \| "status" \| "priority" \| "tag", value }`) |
 | DELETE | `/api/tickets/bulk` | Admin only | Bulk hard delete (spam removal) across up to 200 tickets at once |
