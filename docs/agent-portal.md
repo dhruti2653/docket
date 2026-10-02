@@ -124,7 +124,7 @@ The full ticket view for agents. Split into two panels:
 - On returning to the ticket, the draft is restored into the composer. The action bar shows "Saving draft…" / "Draft saved · {time}" / "Couldn't save draft", plus a trash button that discards it (with a confirmation dialog; `DELETE /api/tickets/{id}/draft`).
 - Sending the reply deletes the draft server-side (in the comments route). Clearing the composer also deletes it.
 - Attachments are not drafted — unsent files only live in the browser tab.
-- `/tickets` shows a pencil icon (tooltip "Draft — unsent reply saved", on hover/focus/click) next to the subject of every ticket where the current agent has a saved draft.
+- `/tickets` shows a pencil icon (browser tooltip "Draft — unsent reply saved" on hover) next to the subject of every ticket where the current agent has a saved draft.
 
 ### Internal Note
 

@@ -165,8 +165,8 @@ export function ApiKeysManager({ initialKeys }: Props) {
 
   return (
     <section className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-base font-semibold text-base-content">
             API Keys
           </h2>
@@ -174,7 +174,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
             Let external websites create tickets programmatically.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           <Button
             asChild
             className="border-base-300 text-base-content hover:bg-base-300 rounded-md gap-1.5"
@@ -308,10 +308,10 @@ export function ApiKeysManager({ initialKeys }: Props) {
 
       {/* Create dialog */}
       <Dialog onOpenChange={(open) => !open && closeAdd()} open={addOpen}>
-        <DialogContent className="rounded-xl max-w-sm">
+        <DialogContent className="rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
           {createdKey ? (
             <>
-              <DialogHeader>
+              <DialogHeader className="pr-8">
                 <DialogTitle className="text-base-content">
                   API key created
                 </DialogTitle>
@@ -337,7 +337,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
               </div>
               <DialogFooter>
                 <Button
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-content rounded-md"
+                  className="w-full sm:w-auto sm:flex-1 bg-primary hover:bg-primary/90 text-primary-content rounded-md"
                   onClick={closeAdd}
                 >
                   Done
@@ -346,7 +346,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
             </>
           ) : (
             <>
-              <DialogHeader>
+              <DialogHeader className="pr-8">
                 <DialogTitle className="text-base-content">
                   Create API Key
                 </DialogTitle>
@@ -355,18 +355,25 @@ export function ApiKeysManager({ initialKeys }: Props) {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-base-content-muted">
+                <Label
+                  className="text-xs font-medium text-base-content-muted"
+                  htmlFor="api-key-name"
+                >
                   Name
                 </Label>
                 <Input
                   className="rounded-md"
+                  id="api-key-name"
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Marketing site"
                   value={name}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-base-content-muted">
+                <Label
+                  className="text-xs font-medium text-base-content-muted"
+                  htmlFor="api-key-portal-url"
+                >
                   Customer portal URL{" "}
                   <span className="text-base-content-muted font-normal">
                     (optional)
@@ -374,11 +381,12 @@ export function ApiKeysManager({ initialKeys }: Props) {
                 </Label>
                 <Input
                   className="rounded-md font-mono text-xs"
+                  id="api-key-portal-url"
                   onChange={(e) => setPortalUrlTemplate(e.target.value)}
-                  placeholder="https://myapp.com/support/{{ticketId}}?token={{token}}"
+                  placeholder="https://myapp.com/support/{{ticketId}}"
                   value={portalUrlTemplate}
                 />
-                <p className="text-xs text-base-content-muted">
+                <p className="text-xs leading-relaxed break-words text-base-content-muted">
                   If your own site has its own support page, tickets created
                   through this key link there instead of Docket's portal.
                   Placeholders: <code>{"{{ticketId}}"}</code>,{" "}
@@ -388,7 +396,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
               {error && <p className="text-xs text-red-600">{error}</p>}
               <DialogFooter className="gap-2">
                 <Button
-                  className="flex-1 border-base-300 text-base-content rounded-md"
+                  className="w-full sm:w-auto sm:flex-1 border-base-300 text-base-content rounded-md"
                   disabled={saving}
                   onClick={() => setAddOpen(false)}
                   variant="outline"
@@ -396,7 +404,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
                   Cancel
                 </Button>
                 <Button
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-content rounded-md"
+                  className="w-full sm:w-auto sm:flex-1 bg-primary hover:bg-primary/90 text-primary-content rounded-md"
                   disabled={saving || !name.trim()}
                   onClick={handleCreate}
                 >
@@ -413,8 +421,8 @@ export function ApiKeysManager({ initialKeys }: Props) {
         onOpenChange={(open) => !open && setEditTarget(null)}
         open={editTarget !== null}
       >
-        <DialogContent className="rounded-xl max-w-sm">
-          <DialogHeader>
+        <DialogContent className="rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pr-8">
             <DialogTitle className="text-base-content">
               Edit API Key
             </DialogTitle>
@@ -423,17 +431,24 @@ export function ApiKeysManager({ initialKeys }: Props) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-base-content-muted">
+            <Label
+              className="text-xs font-medium text-base-content-muted"
+              htmlFor="edit-api-key-name"
+            >
               Name
             </Label>
             <Input
               className="rounded-md"
+              id="edit-api-key-name"
               onChange={(e) => setEditName(e.target.value)}
               value={editName}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-base-content-muted">
+            <Label
+              className="text-xs font-medium text-base-content-muted"
+              htmlFor="edit-api-key-portal-url"
+            >
               Customer portal URL{" "}
               <span className="text-base-content-muted font-normal">
                 (optional)
@@ -441,11 +456,12 @@ export function ApiKeysManager({ initialKeys }: Props) {
             </Label>
             <Input
               className="rounded-md font-mono text-xs"
+              id="edit-api-key-portal-url"
               onChange={(e) => setEditPortalUrlTemplate(e.target.value)}
-              placeholder="https://myapp.com/support/{{ticketId}}?token={{token}}"
+              placeholder="https://myapp.com/support/{{ticketId}}"
               value={editPortalUrlTemplate}
             />
-            <p className="text-xs text-base-content-muted">
+            <p className="text-xs leading-relaxed break-words text-base-content-muted">
               Leave blank to use Docket's own customer portal. Placeholders:{" "}
               <code>{"{{ticketId}}"}</code>, <code>{"{{token}}"}</code>.
             </p>
@@ -453,7 +469,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
           {editError && <p className="text-xs text-red-600">{editError}</p>}
           <DialogFooter className="gap-2">
             <Button
-              className="flex-1 border-base-300 text-base-content rounded-md"
+              className="w-full sm:w-auto sm:flex-1 border-base-300 text-base-content rounded-md"
               disabled={editSaving}
               onClick={() => setEditTarget(null)}
               variant="outline"
@@ -461,7 +477,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
               Cancel
             </Button>
             <Button
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-content rounded-md"
+              className="w-full sm:w-auto sm:flex-1 bg-primary hover:bg-primary/90 text-primary-content rounded-md"
               disabled={editSaving || !editName.trim()}
               onClick={handleEditSave}
             >
@@ -491,7 +507,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
-              className="flex-1 border-base-300 text-base-content rounded-md"
+              className="w-full sm:w-auto sm:flex-1 border-base-300 text-base-content rounded-md"
               disabled={revoking}
               onClick={() => setRevokeTarget(null)}
               variant="outline"
@@ -499,7 +515,7 @@ export function ApiKeysManager({ initialKeys }: Props) {
               Cancel
             </Button>
             <Button
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-md"
+              className="w-full sm:w-auto sm:flex-1 bg-red-600 hover:bg-red-700 text-white rounded-md"
               disabled={revoking}
               onClick={handleRevoke}
             >

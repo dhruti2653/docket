@@ -20,11 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import type { SlaSnapshot } from "@/lib/sla";
 import type { TicketPriority, TicketStatus } from "@/lib/ticket-config";
 import {
@@ -337,22 +332,14 @@ export function TicketRow({
       <td className="px-4 py-3">
         <div className="flex items-start gap-2">
           {row.hasDraft && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  aria-label="Draft — you have an unsent reply on this ticket"
-                  className="-my-0.5 flex size-6 shrink-0 items-center justify-center rounded-field text-primary transition-colors hover:bg-base-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  // The tooltip opens on hover/focus; Safari doesn't focus a
-                  // button on click, so focus it explicitly to make a click
-                  // (or tap) open it too.
-                  onClick={(e) => e.currentTarget.focus()}
-                  type="button"
-                >
-                  <PencilSimpleLineIcon className="size-4" weight="bold" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Draft — unsent reply saved</TooltipContent>
-            </Tooltip>
+            <span
+              aria-label="Draft — you have an unsent reply on this ticket"
+              className="-my-0.5 flex size-6 shrink-0 items-center justify-center rounded-field text-primary"
+              role="img"
+              title="Draft — unsent reply saved"
+            >
+              <PencilSimpleLineIcon className="size-4" weight="bold" />
+            </span>
           )}
           <Link
             className="text-[13px] font-medium text-base-content hover:underline line-clamp-2"

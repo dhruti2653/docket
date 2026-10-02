@@ -9,7 +9,7 @@ export default async function WebhooksPage() {
   const webhooks = await listWebhookEndpoints();
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 lg:p-6 max-w-6xl mx-auto">
       <WebhooksManager
         initialWebhooks={webhooks.map((w) => ({
           id: w.id,

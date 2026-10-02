@@ -349,22 +349,16 @@ export function WebhooksManager({ initialWebhooks }: Props) {
                     className="hover:bg-base-300/30 transition-colors"
                     key={w.id}
                   >
-                    <td className="px-4 py-3 font-medium text-base-content">
-                      {w.name}
+                    <td className="px-4 py-3 font-medium text-base-content max-w-0 w-1/5">
+                      <TruncatedText text={w.name} />
                     </td>
-                    <td
-                      className="px-4 py-3 font-mono text-xs text-base-content-muted max-w-56 truncate"
-                      title={w.url}
-                    >
-                      {w.url}
+                    <td className="px-4 py-3 font-mono text-xs text-base-content-muted max-w-0 w-1/4">
+                      <TruncatedText text={w.url} />
                     </td>
-                    <td
-                      className="px-4 py-3 text-xs text-base-content-muted hidden lg:table-cell max-w-64 truncate"
-                      title={w.events.join(", ")}
-                    >
-                      {w.events.join(", ")}
+                    <td className="px-4 py-3 text-xs text-base-content-muted hidden lg:table-cell max-w-0 w-1/4">
+                      <TruncatedText text={w.events.join(", ")} />
                     </td>
-                    <td className="px-4 py-3 text-xs hidden md:table-cell">
+                    <td className="px-4 py-3 text-xs hidden md:table-cell w-px whitespace-nowrap">
                       {w.lastDeliveryAt ? (
                         <span
                           className={
@@ -382,14 +376,14 @@ export function WebhooksManager({ initialWebhooks }: Props) {
                         <span className="text-base-content-muted">Never</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 w-px">
                       <Switch
                         checked={w.isActive}
                         onCheckedChange={() => handleToggleActive(w)}
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1.5 flex-wrap justify-end">
+                    <td className="px-4 py-3 w-px">
+                      <div className="flex gap-1.5 justify-end">
                         <Button
                           className="h-8 border-base-300 text-base-content hover:bg-base-300 rounded-md"
                           onClick={() => handleTest(w)}
@@ -777,5 +771,14 @@ function EventCheckboxes({
         ))}
       </div>
     </div>
+  );
+}
+
+// Truncates to one line with an ellipsis; the full text shows on hover.
+function TruncatedText({ text }: { text: string }) {
+  return (
+    <span className="block truncate" title={text}>
+      {text}
+    </span>
   );
 }
