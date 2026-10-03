@@ -179,6 +179,14 @@ export function TicketInfoSidebar({
       const m = a.metadata as { ticketNumber?: number } | null;
       return `Merged #${m?.ticketNumber ?? "?"} into this ticket`;
     },
+    split_to: (a) => {
+      const m = a.metadata as { ticketNumber?: number } | null;
+      return `Reply split into new ticket #${m?.ticketNumber ?? "?"}`;
+    },
+    split_from: (a) => {
+      const m = a.metadata as { ticketNumber?: number } | null;
+      return `Split from #${m?.ticketNumber ?? "?"}`;
+    },
   };
   const router = useRouter();
 

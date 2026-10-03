@@ -412,7 +412,7 @@ ticket_reply_drafts
 
 ### `ticket_links`
 
-Agent-only relationships between tickets (see `docs/tickets.md` § Merge & Link). One row per link, read from both ends; `related_to` is symmetric, `duplicate_of` and `blocks` are directional.
+Agent-only relationships between tickets (see `docs/tickets.md` § Merge, Split & Link). One row per link, read from both ends; `related_to` is symmetric, `duplicate_of` and `blocks` are directional.
 
 ```
 ticket_links

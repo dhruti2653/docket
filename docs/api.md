@@ -246,7 +246,7 @@ merged into. Reads return that ticket — compare the response's `id` with the o
 requested to detect a merge — and replies/status changes land on it. Merged tickets
 are left out of `GET /api/v1/tickets?email=`. A reply that races a merge gets a
 `409`; retrying it is safe and applies it to the merged ticket. Attachment URLs keep
-working after a merge (see below).
+working after a merge or a split (see below).
 
 ## `GET /api/v1/tickets/:id`
 
@@ -286,7 +286,7 @@ deployment belongs to one owner.
 Download a single attachment's bytes — e.g. to proxy a file the customer or
 an agent uploaded through to your own users, without exposing storage keys.
 The attachment is matched by its id alone, so a stored URL keeps working after an
-agent merges the ticket and the file moves to another ticket. This is the endpoint
+agent merges or splits the ticket and the file moves to another ticket. This is the endpoint
 every `url` field elsewhere in the API (on `GET /tickets/:id` and
 `GET /tickets/:id/comments`) points to.
 

@@ -59,6 +59,7 @@ import {
 import { getInitials } from "@/lib/utils";
 import { AgentReplyForm } from "./_components/agent-reply-form";
 import { CustomerProfilePopover } from "./_components/customer-profile-popover";
+import { SplitCommentButton } from "./_components/split-comment-button";
 import { TicketInfoSidebar } from "./_components/ticket-info-sidebar";
 
 interface Props {
@@ -576,6 +577,14 @@ export default async function AgentTicketDetailPage({
                       <span className="text-xs text-base-content-muted ml-auto shrink-0">
                         <LocalDateTime date={comment.createdAt} />
                       </span>
+                      {isCustomer && !comment.isInternal && (
+                        <SplitCommentButton
+                          commentId={comment.id}
+                          ticketId={ticket.id}
+                          ticketNumber={ticket.ticketNumber}
+                          ticketSubject={ticket.subject}
+                        />
+                      )}
                     </div>
                     {!isRichTextEmpty(comment.content) && (
                       <RichTextContent content={comment.content} />

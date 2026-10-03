@@ -389,7 +389,7 @@ export function buildOpenApiSpec(baseUrl: string): Record<string, unknown> {
           operationId: "getTicketAttachment",
           summary: "Download an attachment",
           description:
-            "Download a single attachment's bytes — e.g. to proxy a file the customer or an agent uploaded through to your own users, without exposing storage keys. Matched by attachment id, so a URL keeps working after an agent merges the ticket and the file moves to another ticket. This is the endpoint every `url` field elsewhere in the API (on the ticket itself and on comments) points to.",
+            "Download a single attachment's bytes — e.g. to proxy a file the customer or an agent uploaded through to your own users, without exposing storage keys. Matched by attachment id, so a URL keeps working after an agent merges or splits the ticket and the file moves to another ticket. This is the endpoint every `url` field elsewhere in the API (on the ticket itself and on comments) points to.",
           parameters: [
             { $ref: "#/components/parameters/TicketId" },
             { $ref: "#/components/parameters/AttachmentId" },

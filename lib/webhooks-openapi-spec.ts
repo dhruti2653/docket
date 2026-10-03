@@ -361,6 +361,25 @@ export function buildWebhooksOpenApiSpec(
           },
         },
       }),
+      "ticket.split": webhookOperation({
+        summary: "Ticket Split",
+        description:
+          "An agent split one customer reply out of `ticket` into the new ticket `newTicket`. `ticket.created` also fires for `newTicket`.",
+        requestSchemaName: "TicketSplitPayload",
+        example: {
+          id: "evt_m1k2l3m4n5o6",
+          event: "ticket.split",
+          createdAt: "2026-07-23T12:50:00.000Z",
+          data: {
+            ticket: EXAMPLE_TICKET,
+            newTicket: {
+              ...EXAMPLE_TICKET,
+              id: "ckq1w2e3r4t5y",
+              ticketNumber: 1044,
+            },
+          },
+        },
+      }),
     },
     components: {
       schemas: {
@@ -434,6 +453,14 @@ export function buildWebhooksOpenApiSpec(
           },
           ["ticket", "mergedTicket"]
         ),
+        TicketSplitPayload: envelope(
+          "ticket.split",
+          {
+            ticket: { $ref: "#/components/schemas/Ticket" },
+            newTicket: { $ref: "#/components/schemas/Ticket" },
+          },
+          ["ticket", "newTicket"]
+        ),
       },
     },
   };
@@ -453,6 +480,7 @@ const specEventNames = new Set([
   "ticket.assigned",
   "ticket.unassigned",
   "ticket.merged",
+  "ticket.split",
 ]);
 const catalogEventNames = new Set(WEBHOOK_EVENTS.map((e) => e.value));
 if (

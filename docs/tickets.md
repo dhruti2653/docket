@@ -261,6 +261,7 @@ Every significant action on a ticket is logged in `ticket_activity` for a full a
 | `tag_removed` | Tag removed from the ticket |
 | `ticket_linked` / `ticket_unlinked` | A link to another ticket was added/removed (written on both tickets) |
 | `merged_into` / `merged_from` | This ticket was merged into another / another ticket was merged into this one |
+| `split_to` / `split_from` | A reply was split out of this ticket / this ticket was split from another |
 
 ```
 ticket_activity
@@ -278,10 +279,10 @@ Activity history is displayed chronologically on the ticket detail page for agen
 
 ---
 
-## Merge & Link
+## Merge, Split & Link
 
-Agent-only actions on the ticket detail page. Logic lives in `lib/tickets/merge.ts` and
-`lib/tickets/links.ts`.
+Agent-only actions on the ticket detail page. Logic lives in `lib/tickets/merge.ts`,
+`lib/tickets/split.ts` and `lib/tickets/links.ts`.
 
 ### Merge
 
@@ -322,16 +323,27 @@ customer's "My Tickets" page (and its email), the customer profile popover, and
 `GET /api/v1/tickets?email=`. The agent-only routes (tags, custom fields, drafts, attachment
 delete) forward too, so a tab left open on the merged ticket doesn't write to the hidden shell.
 
-**Concurrency.** Merge locks both tickets and re-checks inside the transaction; a
-conflicting simultaneous merge gets a `409` ("just changed by someone else"). A reply
+**Concurrency.** Merge and split lock their tickets and re-check inside the transaction; a
+conflicting simultaneous merge/split gets a `409` ("just changed by someone else"). A reply
 saved while a merge is in flight waits for it; if the ticket was merged meanwhile the reply
 is rejected with a `409` asking to resend (its uploads are cleaned up), never stranded on the
-hidden ticket. Deleting a ticket also deletes the tickets merged into it. Merges are also
-recorded in the admin audit log (`ticket.merged`).
+hidden ticket. Deleting a ticket also deletes the tickets merged into it. Merges and splits are also
+recorded in the admin audit log (`ticket.merged` / `ticket.split`).
 
 **First response.** The target keeps its own `firstRespondedAt`; it only inherits the
 source's when it had none and the source's came after the target was created (so a first
 response can never predate the ticket).
+
+### Split
+
+The split icon on a **customer's public reply** moves that reply into a new ticket for the same
+customer: the reply becomes the description, its attachments become the new ticket's opening
+attachments, and it is removed from the original (an internal note, back-dated to the reply,
+marks where it was). The
+new ticket copies category, priority, `source` and `apiKeyId` (so its portal link uses the same
+`portalUrlTemplate`), starts unassigned and awaiting reply, and is linked `related_to` the
+original. The customer receives the normal "ticket created" email with the new link. Agent
+replies and internal notes can't be split.
 
 ### Link
 
@@ -379,6 +391,7 @@ never shown to customers.
 | POST | `/api/tickets/{id}/comments` | Customer (token) / Agent | Add a comment or internal note |
 | DELETE | `/api/tickets/{id}` | Admin only | Hard delete (spam removal) |
 | POST | `/api/tickets/{id}/merge` | Agent/Admin | Merge this ticket into another (body: `{ targetTicketNumber }`) |
+| POST | `/api/tickets/{id}/split` | Agent/Admin | Split a customer reply into a new ticket (body: `{ commentId, subject }`) |
 | GET / POST | `/api/tickets/{id}/links` | Agent/Admin | List links / add one (body: `{ ticketNumber, type }`) |
 | DELETE | `/api/tickets/{id}/links/{linkId}` | Agent/Admin | Remove a link (from either end) |
 | PATCH | `/api/tickets/bulk` | Admin only | Bulk assign, change status, change priority, or add a tag across up to 200 tickets at once (body: `{ ids, action: "assign" \| "status" \| "priority" \| "tag", value }`) |

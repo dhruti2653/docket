@@ -73,6 +73,13 @@ export const WEBHOOK_EVENTS: WebhookEventDefinition[] = [
       "A duplicate ticket was merged into another. The merged ticket is closed, but ticket.closed is not fired for it.",
     defaultEnabled: false,
   },
+  {
+    value: "ticket.split",
+    label: "Ticket Split",
+    description:
+      "A customer reply was split out of a ticket into a new ticket. ticket.created also fires for the new ticket.",
+    defaultEnabled: false,
+  },
 ];
 
 export const WEBHOOK_EVENT_VALUES = WEBHOOK_EVENTS.map((e) => e.value);

@@ -35,6 +35,7 @@ If your backend sends its own customer emails off these events, turn off Docket'
 | `ticket.priority_changed` | An agent changes the ticket's priority |
 | `ticket.assigned` / `ticket.unassigned` | A ticket is assigned to (or unassigned from) an agent |
 | `ticket.merged` | A duplicate ticket was merged into another. `data.ticket` is the surviving ticket, `data.mergedTicket` the one merged away. The merged ticket is closed, but `ticket.closed` is **not** fired for it — merges are silent toward the customer. |
+| `ticket.split` | A customer reply was split into a new ticket. `data.ticket` is the original, `data.newTicket` the new one. `ticket.created` also fires for the new ticket. |
 
 Each endpoint subscribes to a subset of these events (configurable per endpoint in the admin UI). An endpoint with zero matching events for a given occurrence receives nothing.
 

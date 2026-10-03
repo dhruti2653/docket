@@ -5,8 +5,8 @@ import { computeSlaTransition } from "@/lib/sla";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** Thrown inside a merge transaction when the row-locked re-check finds a
- * concurrent merge already changed the tickets — rolls back, and the
+/** Thrown inside a merge/split transaction when the row-locked re-check finds
+ * a concurrent merge/split already changed the tickets — rolls back, and the
  * caller turns it into a 409 rather than a 500. */
 export class ConcurrentTicketChangeError extends Error {}
 
@@ -33,7 +33,7 @@ export function countPendingReplies(
 }
 
 /** Recomputes a ticket's "awaiting reply" flag + unread count from its public
- * thread, for operations that rewrite the thread wholesale (merge)
+ * thread, for operations that rewrite the thread wholesale (merge, split)
  * rather than appending one message. Pending = customer messages after the
  * last public agent reply. The ticket's own description counts as a customer
  * message at its createdAt — not necessarily first: a merge back-dates older

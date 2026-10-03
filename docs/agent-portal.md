@@ -152,15 +152,17 @@ The full ticket view for agents. Split into two panels:
 - No confirmation dialog needed.
 - Status → `open`, activity logged.
 
-### Merge & Link
+### Merge, Split & Link
 
 - **Merge into another ticket** (sidebar button) — dialog lists the same customer's other
   open tickets; picking one merges this ticket into it and navigates there. Irreversible.
+- **Split** (icon on each customer reply) — moves that reply into a new ticket; the dialog
+  asks for the new subject.
 - **Linked Tickets** (sidebar card) — add a `related_to` / `duplicate_of` / `blocks` link by
   ticket number, or remove one.
 - Opening `/tickets/{n}` for a merged ticket redirects to the ticket it was merged into.
 
-Full rules: [tickets.md § Merge & Link](./tickets.md#merge--link).
+Full rules: [tickets.md § Merge, Split & Link](./tickets.md#merge-split--link).
 
 ---
 

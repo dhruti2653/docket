@@ -265,7 +265,7 @@ export async function mergeTickets(
   // The checks above ran outside the transaction. Lock both rows (in id order,
   // so two opposite merges can't deadlock) and re-check, or two agents merging
   // A→B and B→A at once would leave the pair pointing at each other.
-  // NO KEY UPDATE serializes merges without blocking customer replies
+  // NO KEY UPDATE serializes merges/splits without blocking customer replies
   // (their FK check only takes KEY SHARE).
   async function runMerge() {
     await db.transaction(async (tx) => {

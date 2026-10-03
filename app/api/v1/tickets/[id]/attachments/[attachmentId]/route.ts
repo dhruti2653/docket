@@ -9,7 +9,7 @@ import { storage } from "@/lib/storage";
 // GET /api/v1/tickets/:id/attachments/:attachmentId — public API, authenticated
 // with an API key. Streams a ticket attachment's bytes so an integrating
 // backend can proxy the download to its own users without exposing storage
-// keys. Looked up by attachment id alone: a merge moves attachments
+// keys. Looked up by attachment id alone: merge and split move attachments
 // between tickets, and a URL stored before that must keep working. Any active
 // key may read any ticket (single-tenant), so the path's ticket id was never
 // an access boundary, and it isn't checked here.
