@@ -1,6 +1,11 @@
 "use client";
 
-import { ClockIcon, TrashIcon, UserIcon } from "@phosphor-icons/react";
+import {
+  ClockIcon,
+  GitMergeIcon,
+  TrashIcon,
+  UserIcon,
+} from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -42,6 +47,7 @@ import { type TicketLinkType, ticketLinkLabel } from "@/lib/tickets/link-types";
 import type { TicketLinkView } from "@/lib/tickets/links";
 import { getInitials } from "@/lib/utils";
 import { CustomerProfilePopover } from "./customer-profile-popover";
+import { MergeTicketDialog } from "./merge-ticket-dialog";
 import { SidebarCard } from "./sidebar-card";
 import { TicketCustomFields } from "./ticket-custom-fields";
 import { TicketLinks } from "./ticket-links";
@@ -165,6 +171,14 @@ export function TicketInfoSidebar({
       const m = a.metadata as { ticketNumber?: number } | null;
       return `Link to #${m?.ticketNumber ?? "?"} removed`;
     },
+    merged_into: (a) => {
+      const m = a.metadata as { ticketNumber?: number } | null;
+      return `Merged into #${m?.ticketNumber ?? "?"}`;
+    },
+    merged_from: (a) => {
+      const m = a.metadata as { ticketNumber?: number } | null;
+      return `Merged #${m?.ticketNumber ?? "?"} into this ticket`;
+    },
   };
   const router = useRouter();
 
@@ -184,6 +198,7 @@ export function TicketInfoSidebar({
   const [closeOpen, setCloseOpen] = useState(false);
   const [pendingClose, setPendingClose] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -412,30 +427,48 @@ export function TicketInfoSidebar({
           )}
         </div>
 
-        {statusMap[status]?.isClosedState ? (
+        {/* Lifecycle actions — one tight stack so Merge reads as part of the
+            same group as Close/Reopen rather than a separate section. */}
+        <div className="space-y-2">
+          {statusMap[status]?.isClosedState ? (
+            <Button
+              className="w-full border-base-300 text-base-content hover:bg-base-300 text-xs"
+              disabled={loading}
+              onClick={handleReopen}
+              size="sm"
+              variant="outline"
+            >
+              Reopen Ticket
+            </Button>
+          ) : (
+            <Button
+              className="w-full border-red-200 text-red-600 hover:bg-red-50 text-xs"
+              disabled={loading}
+              onClick={() => {
+                setPendingClose(null);
+                setCloseOpen(true);
+              }}
+              size="sm"
+              variant="outline"
+            >
+              Close Ticket
+            </Button>
+          )}
+
+          {/* Short label on purpose: buttons are uppercase + nowrap, and a
+              longer one overflows the 18rem sidebar. The dialog explains the
+              rest ("merge into which ticket"). */}
           <Button
             className="w-full border-base-300 text-base-content hover:bg-base-300 text-xs"
             disabled={loading}
-            onClick={handleReopen}
+            onClick={() => setMergeOpen(true)}
             size="sm"
             variant="outline"
           >
-            Reopen Ticket
+            <GitMergeIcon className="size-3.5" />
+            Merge Ticket
           </Button>
-        ) : (
-          <Button
-            className="w-full border-red-200 text-red-600 hover:bg-red-50 text-xs"
-            disabled={loading}
-            onClick={() => {
-              setPendingClose(null);
-              setCloseOpen(true);
-            }}
-            size="sm"
-            variant="outline"
-          >
-            Close Ticket
-          </Button>
-        )}
+        </div>
 
         {error && <p className="text-xs text-red-600">{error}</p>}
       </SidebarCard>
@@ -646,6 +679,13 @@ export function TicketInfoSidebar({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MergeTicketDialog
+        onOpenChange={setMergeOpen}
+        open={mergeOpen}
+        statuses={statuses}
+        ticket={ticket}
+      />
 
       {/* Delete Ticket dialog */}
       <Dialog onOpenChange={setDeleteOpen} open={deleteOpen}>

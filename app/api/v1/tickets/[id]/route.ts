@@ -10,6 +10,7 @@ import {
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { richTextToHtml, richTextToPlainText } from "@/lib/rich-text";
+import { resolveMergedTicketId } from "@/lib/tickets/merge";
 
 // GET /api/v1/tickets/:id — any active key reads any ticket; single-tenant, so
 // there is no cross-tenant isolation to enforce. Returns the opening message
@@ -25,7 +26,9 @@ export async function GET(
     return e as Response;
   }
 
-  const { id } = await params;
+  const { id: requestedId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const id = await resolveMergedTicketId(requestedId);
   const [ticket] = await db
     .select({
       id: tickets.id,

@@ -72,8 +72,8 @@ interface Actor {
 type LinkResult = { ok: true } | { ok: false; error: string; status: number };
 
 /** Links `ticketId` → the ticket numbered `linkedTicketNumber`. Rejects self
- * links and a second link of the same type between the same pair in either
- * direction. Writes an activity row on both tickets. */
+ * links, merged tickets, and a second link of the same type between the same
+ * pair in either direction. Writes an activity row on both tickets. */
 export async function addTicketLink(
   ticketId: string,
   linkedTicketNumber: number,
@@ -84,6 +84,7 @@ export async function addTicketLink(
     .select({
       id: tickets.id,
       ticketNumber: tickets.ticketNumber,
+      mergedIntoTicketId: tickets.mergedIntoTicketId,
     })
     .from(tickets)
     .where(eq(tickets.id, ticketId))
@@ -96,6 +97,7 @@ export async function addTicketLink(
     .select({
       id: tickets.id,
       ticketNumber: tickets.ticketNumber,
+      mergedIntoTicketId: tickets.mergedIntoTicketId,
     })
     .from(tickets)
     .where(eq(tickets.ticketNumber, linkedTicketNumber))
@@ -114,6 +116,15 @@ export async function addTicketLink(
       status: 400,
     };
   }
+  if (source.mergedIntoTicketId || target.mergedIntoTicketId) {
+    return {
+      ok: false,
+      error:
+        "Merged tickets can't be linked — link the ticket they were merged into.",
+      status: 400,
+    };
+  }
+
   // One link per pair and type, in either direction: the reverse of
   // related_to is the same link, and reverse duplicate_of / blocks would be a
   // contradiction (A blocks B and B blocks A).

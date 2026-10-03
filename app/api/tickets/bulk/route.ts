@@ -16,6 +16,7 @@ import { db } from "@/lib/db";
 import { storage } from "@/lib/storage";
 import { getOrCreateTagId, normalizeTagName } from "@/lib/tags";
 import { getTicketPriorities, getTicketStatuses } from "@/lib/ticket-config";
+import { withMergedShells } from "@/lib/tickets/merge";
 
 const MAX_BULK_IDS = 200;
 const MAX_TAG_LENGTH = 50;
@@ -295,11 +296,14 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
+  // Tickets merged into a selected one go with it (see withMergedShells).
+  const deleteIds = await withMergedShells(ids);
+
   // Delete storage files before DB records
   const attachments = await db
     .select({ storageKey: ticketAttachments.storageKey })
     .from(ticketAttachments)
-    .where(inArray(ticketAttachments.ticketId, ids));
+    .where(inArray(ticketAttachments.ticketId, deleteIds));
 
   for (const att of attachments) {
     try {
@@ -310,7 +314,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   // Delete tickets (cascade removes comments, activity, attachments)
-  await db.delete(tickets).where(inArray(tickets.id, ids));
+  await db.delete(tickets).where(inArray(tickets.id, deleteIds));
 
   await audit({
     action: "ticket.bulk_delete",

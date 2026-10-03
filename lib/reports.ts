@@ -35,9 +35,13 @@ export function parseReportRange(value: string | null): ReportRange {
   return value === "90d" || value === "all" ? value : "30d";
 }
 
+/** Every report's ticket filter. Merged tickets are always excluded: their
+ * content (and copied tags) now lives on the surviving ticket, so counting
+ * the closed shell too would double-count it. */
 function rangeCondition(range: ReportRange) {
   const start = getReportRangeStart(range);
-  return start ? gte(tickets.createdAt, start) : undefined;
+  const notMerged = isNull(tickets.mergedIntoTicketId);
+  return start ? and(gte(tickets.createdAt, start), notMerged) : notMerged;
 }
 
 export interface AgentReportRow {

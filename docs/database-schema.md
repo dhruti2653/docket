@@ -234,6 +234,8 @@ tickets
 ├── source            text NOT NULL DEFAULT 'portal' ← 'portal' | 'api'
 ├── api_key_id        text → api_keys.id (SET NULL on delete), nullable   ← set when source = 'api'
 ├── closed_at         timestamp with time zone, nullable
+├── merged_into_ticket_id text → tickets.id (SET NULL on delete), nullable ← set when merged; never points at another merged ticket
+├── merged_at         timestamp with time zone, nullable
 ├── waiting_since     timestamp with time zone, nullable  ← SLA: when the current wait state began; null once closed (see docs/tickets.md § SLA)
 ├── first_responded_at timestamp with time zone, nullable ← SLA: frozen at the first non-internal agent/admin reply
 ├── sla_active_seconds integer NOT NULL DEFAULT 0         ← SLA: accumulated "waiting for agent" seconds (Resolution clock)
@@ -248,6 +250,7 @@ Indexes:
 - created_at
 - awaiting_reply
 - priority
+- merged_into_ticket_id
 ```
 
 ### `ticket_comments`
@@ -409,7 +412,7 @@ ticket_reply_drafts
 
 ### `ticket_links`
 
-Agent-only relationships between tickets (see `docs/tickets.md` § Linked Tickets). One row per link, read from both ends; `related_to` is symmetric, `duplicate_of` and `blocks` are directional.
+Agent-only relationships between tickets (see `docs/tickets.md` § Merge & Link). One row per link, read from both ends; `related_to` is symmetric, `duplicate_of` and `blocks` are directional.
 
 ```
 ticket_links

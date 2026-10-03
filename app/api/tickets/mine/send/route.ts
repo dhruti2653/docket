@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { customers, tickets } from "@/db/schema";
@@ -61,7 +61,13 @@ export async function POST(request: NextRequest) {
           customerToken: tickets.customerToken,
         })
         .from(tickets)
-        .where(eq(tickets.customerId, customer.id))
+        // Same set the linked My Tickets page shows — merged tickets hidden.
+        .where(
+          and(
+            eq(tickets.customerId, customer.id),
+            isNull(tickets.mergedIntoTicketId)
+          )
+        )
     : [];
 
   // Always respond the same way regardless of whether tickets exist — only

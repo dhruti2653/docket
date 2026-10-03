@@ -137,7 +137,9 @@ export function buildTicketsWhereClause(
   const awaitingFilter = params.awaiting === "1";
   const mineFilter = params.mine === "1";
 
-  const conditions: SQL[] = [];
+  // Merged tickets never show in the list — they're closed shells that
+  // forward to the ticket they were merged into.
+  const conditions: SQL[] = [isNull(tickets.mergedIntoTicketId)];
   if (search) {
     const numSearch = Number.parseInt(search.replace("#", ""), 10);
     const textConditions = [
@@ -215,7 +217,7 @@ export function buildTicketsWhereClause(
     );
   }
 
-  return conditions.length > 0 ? and(...conditions) : undefined;
+  return and(...conditions);
 }
 
 /** Re-serializes a searchParams object back into a query string, carrying

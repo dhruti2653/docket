@@ -238,6 +238,16 @@ admin-configurable, so don't hardcode it.
 > points at your own site instead of Docket's built-in `/ticket/:id`
 > portal. No response shape change, just a different value.
 
+## Merged tickets
+
+When an agent merges a duplicate ticket into another, the merged ticket's id keeps
+working: every `/api/v1/tickets/:id/*` endpoint transparently acts on the ticket it was
+merged into. Reads return that ticket — compare the response's `id` with the one you
+requested to detect a merge — and replies/status changes land on it. Merged tickets
+are left out of `GET /api/v1/tickets?email=`. A reply that races a merge gets a
+`409`; retrying it is safe and applies it to the merged ticket. Attachment URLs keep
+working after a merge (see below).
+
 ## `GET /api/v1/tickets/:id`
 
 Look up a ticket's current status — e.g. to show "In Progress" on your own
@@ -275,7 +285,8 @@ deployment belongs to one owner.
 
 Download a single attachment's bytes — e.g. to proxy a file the customer or
 an agent uploaded through to your own users, without exposing storage keys.
-The attachment must belong to the ticket in the path. This is the endpoint
+The attachment is matched by its id alone, so a stored URL keeps working after an
+agent merges the ticket and the file moves to another ticket. This is the endpoint
 every `url` field elsewhere in the API (on `GET /tickets/:id` and
 `GET /tickets/:id/comments`) points to.
 
@@ -288,8 +299,7 @@ curl https://support.example.com/api/v1/tickets/cku1a2b3c4d5e6f/attachments/ckw3
 **Response** — `200 OK`: the raw file bytes, with `Content-Type` set to the
 attachment's stored MIME type and `Content-Disposition: attachment` (so a
 browser hitting this URL directly downloads rather than navigates). `404`
-if the attachment doesn't exist, doesn't belong to that ticket, or the
-underlying file is missing from storage.
+if the attachment doesn't exist or the underlying file is missing from storage.
 
 ## `GET /api/v1/tickets/:id/comments`
 

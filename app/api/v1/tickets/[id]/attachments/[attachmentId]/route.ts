@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { ticketAttachments } from "@/db/schema";
@@ -9,7 +9,10 @@ import { storage } from "@/lib/storage";
 // GET /api/v1/tickets/:id/attachments/:attachmentId — public API, authenticated
 // with an API key. Streams a ticket attachment's bytes so an integrating
 // backend can proxy the download to its own users without exposing storage
-// keys. The attachment must belong to the ticket in the path.
+// keys. Looked up by attachment id alone: a merge moves attachments
+// between tickets, and a URL stored before that must keep working. Any active
+// key may read any ticket (single-tenant), so the path's ticket id was never
+// an access boundary, and it isn't checked here.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; attachmentId: string }> }
@@ -20,7 +23,7 @@ export async function GET(
     return e as Response;
   }
 
-  const { id: ticketId, attachmentId } = await params;
+  const { attachmentId } = await params;
 
   const [attachment] = await db
     .select({
@@ -29,12 +32,7 @@ export async function GET(
       mimeType: ticketAttachments.mimeType,
     })
     .from(ticketAttachments)
-    .where(
-      and(
-        eq(ticketAttachments.id, attachmentId),
-        eq(ticketAttachments.ticketId, ticketId)
-      )
-    )
+    .where(eq(ticketAttachments.id, attachmentId))
     .limit(1);
 
   if (!attachment) {

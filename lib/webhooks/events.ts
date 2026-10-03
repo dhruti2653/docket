@@ -66,6 +66,13 @@ export const WEBHOOK_EVENTS: WebhookEventDefinition[] = [
     description: "A ticket was unassigned.",
     defaultEnabled: false,
   },
+  {
+    value: "ticket.merged",
+    label: "Ticket Merged",
+    description:
+      "A duplicate ticket was merged into another. The merged ticket is closed, but ticket.closed is not fired for it.",
+    defaultEnabled: false,
+  },
 ];
 
 export const WEBHOOK_EVENT_VALUES = WEBHOOK_EVENTS.map((e) => e.value);

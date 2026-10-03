@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -42,6 +43,15 @@ export const tickets = pgTable(
       onDelete: "set null",
     }),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    // Set when this ticket was merged into another (lib/tickets/merge.ts). The
+    // row is kept, closed, so its old portal link / API id can forward to the
+    // surviving ticket instead of 404ing. Always points at a ticket that is
+    // itself not merged — merging the target later re-points these rows.
+    mergedIntoTicketId: text("merged_into_ticket_id").references(
+      (): AnyPgColumn => tickets.id,
+      { onDelete: "set null" }
+    ),
+    mergedAt: timestamp("merged_at", { withTimezone: true }),
     // SLA tracking (lib/sla.ts), written by the same call sites as awaitingReply
     // via computeSlaTransition(). When the current wait state began; null once
     // closed. Only moves on a real awaitingReply flip, never on every message,
@@ -70,6 +80,7 @@ export const tickets = pgTable(
     index("tickets_created_at_idx").on(t.createdAt),
     index("tickets_awaiting_reply_idx").on(t.awaitingReply),
     index("tickets_priority_idx").on(t.priority),
+    index("tickets_merged_into_ticket_id_idx").on(t.mergedIntoTicketId),
   ]
 );
 

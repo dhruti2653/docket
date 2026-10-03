@@ -71,7 +71,11 @@ export function buildOpenApiSpec(baseUrl: string): Record<string, unknown> {
         "",
         "## Errors",
         "",
-        'Every error response is `{ "error": "<message>" }` with an appropriate HTTP status (`400` validation, `401` auth, `403` forbidden, `404` not found, `429` rate limited, `500` server error).',
+        'Every error response is `{ "error": "<message>" }` with an appropriate HTTP status (`400` validation, `401` auth, `403` forbidden, `404` not found, `409` conflict, `429` rate limited, `500` server error).',
+        "",
+        "## Merged tickets",
+        "",
+        "Agents can merge a duplicate ticket into another ticket from the same customer. The merged ticket's id keeps working: every `/tickets/{id}/…` endpoint acts on the ticket it was merged into — reads return that ticket (compare the response's `id` with the one you requested to detect a merge), and replies and status changes land on it. Merged tickets are left out of `GET /tickets?email=`. A reply that races a merge gets a `409`; retrying it is safe and applies it to the merged ticket.",
         "",
         "## Outbound webhooks",
         "",
@@ -247,7 +251,7 @@ export function buildOpenApiSpec(baseUrl: string): Record<string, unknown> {
           operationId: "listTicketsByEmail",
           summary: "List a customer's tickets",
           description:
-            'List a customer\'s tickets, most recent first — e.g. to show "Your Tickets" on your own site. Paginated: 50 per page by default, up to 100 with `per_page`. Matches on exact, case-sensitive equality against the email the ticket was created with — an empty `tickets` array just means no match, not an error.',
+            'List a customer\'s tickets, most recent first — e.g. to show "Your Tickets" on your own site. Paginated: 50 per page by default, up to 100 with `per_page`. Matches on exact, case-sensitive equality against the email the ticket was created with — an empty `tickets` array just means no match, not an error. Tickets merged into another ticket are left out.',
           parameters: [
             {
               name: "email",
@@ -346,7 +350,7 @@ export function buildOpenApiSpec(baseUrl: string): Record<string, unknown> {
           operationId: "getTicket",
           summary: "Get a ticket",
           description:
-            'Look up a ticket\'s full details — e.g. to show "In Progress" on your own site without redirecting to the portal, or to bind a ticket to the account that owns it. Any active API key can read any ticket on your instance; there is no per-key scoping, since a self-hosted deployment belongs to one owner.',
+            'Look up a ticket\'s full details — e.g. to show "In Progress" on your own site without redirecting to the portal, or to bind a ticket to the account that owns it. Any active API key can read any ticket on your instance; there is no per-key scoping, since a self-hosted deployment belongs to one owner. If the ticket was merged into another, that ticket is returned (its `id` differs from the one requested).',
           parameters: [{ $ref: "#/components/parameters/TicketId" }],
           responses: {
             "200": {
@@ -385,7 +389,7 @@ export function buildOpenApiSpec(baseUrl: string): Record<string, unknown> {
           operationId: "getTicketAttachment",
           summary: "Download an attachment",
           description:
-            "Download a single attachment's bytes — e.g. to proxy a file the customer or an agent uploaded through to your own users, without exposing storage keys. The attachment must belong to the ticket in the path. This is the endpoint every `url` field elsewhere in the API (on the ticket itself and on comments) points to.",
+            "Download a single attachment's bytes — e.g. to proxy a file the customer or an agent uploaded through to your own users, without exposing storage keys. Matched by attachment id, so a URL keeps working after an agent merges the ticket and the file moves to another ticket. This is the endpoint every `url` field elsewhere in the API (on the ticket itself and on comments) points to.",
           parameters: [
             { $ref: "#/components/parameters/TicketId" },
             { $ref: "#/components/parameters/AttachmentId" },

@@ -152,11 +152,15 @@ The full ticket view for agents. Split into two panels:
 - No confirmation dialog needed.
 - Status → `open`, activity logged.
 
-### Linked Tickets
+### Merge & Link
 
-- **Linked Tickets** sidebar card — add a "Related to" / "A duplicate of" / "Blocking" link by
-  ticket number, or remove one. Each link shows the other ticket's number, subject and status.
-- Full rules: [tickets.md § Linked Tickets](./tickets.md#linked-tickets).
+- **Merge into another ticket** (sidebar button) — dialog lists the same customer's other
+  open tickets; picking one merges this ticket into it and navigates there. Irreversible.
+- **Linked Tickets** (sidebar card) — add a `related_to` / `duplicate_of` / `blocks` link by
+  ticket number, or remove one.
+- Opening `/tickets/{n}` for a merged ticket redirects to the ticket it was merged into.
+
+Full rules: [tickets.md § Merge & Link](./tickets.md#merge--link).
 
 ---
 

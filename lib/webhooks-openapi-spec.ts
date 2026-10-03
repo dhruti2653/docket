@@ -341,6 +341,26 @@ export function buildWebhooksOpenApiSpec(
           data: { ticket: EXAMPLE_TICKET, assignedAgentId: null },
         },
       }),
+      "ticket.merged": webhookOperation({
+        summary: "Ticket Merged",
+        description:
+          "A duplicate ticket (`mergedTicket`) was merged into `ticket`. Its replies and attachments moved to `ticket`; the merged ticket is closed but kept, and its id/portal link forward to `ticket`. `ticket.closed` is **not** fired for the merged ticket — merges are silent toward the customer.",
+        requestSchemaName: "TicketMergedPayload",
+        example: {
+          id: "evt_l0j1k2l3m4n5",
+          event: "ticket.merged",
+          createdAt: "2026-07-23T12:45:00.000Z",
+          data: {
+            ticket: EXAMPLE_TICKET,
+            mergedTicket: {
+              ...EXAMPLE_TICKET,
+              id: "ckm9n8b7v6c5x",
+              ticketNumber: 1043,
+              status: "closed",
+            },
+          },
+        },
+      }),
     },
     components: {
       schemas: {
@@ -406,6 +426,14 @@ export function buildWebhooksOpenApiSpec(
           },
           ["ticket", "assignedAgentId"]
         ),
+        TicketMergedPayload: envelope(
+          "ticket.merged",
+          {
+            ticket: { $ref: "#/components/schemas/Ticket" },
+            mergedTicket: { $ref: "#/components/schemas/Ticket" },
+          },
+          ["ticket", "mergedTicket"]
+        ),
       },
     },
   };
@@ -424,6 +452,7 @@ const specEventNames = new Set([
   "ticket.priority_changed",
   "ticket.assigned",
   "ticket.unassigned",
+  "ticket.merged",
 ]);
 const catalogEventNames = new Set(WEBHOOK_EVENTS.map((e) => e.value));
 if (

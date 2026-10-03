@@ -6,6 +6,7 @@ import { ticketReplyDrafts, tickets } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isRichTextEmpty } from "@/lib/rich-text";
+import { resolveMergedTicketId } from "@/lib/tickets/merge";
 import { deleteReplyDraft } from "@/lib/tickets/reply-drafts";
 
 // Generous ceiling for a Tiptap JSON reply — only here to stop the autosave
@@ -37,7 +38,9 @@ export async function PUT(
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  const { id: ticketId } = await params;
+  const { id: requestedTicketId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const ticketId = await resolveMergedTicketId(requestedTicketId);
 
   let body: { content?: unknown; isInternal?: unknown };
   try {
@@ -99,7 +102,9 @@ export async function DELETE(
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  const { id: ticketId } = await params;
+  const { id: requestedTicketId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const ticketId = await resolveMergedTicketId(requestedTicketId);
   await deleteReplyDraft(ticketId, session.user.id);
   return NextResponse.json({ draft: null });
 }

@@ -14,6 +14,7 @@ import {
   getDefaultStatus,
   isClosedStatusSlug,
 } from "@/lib/ticket-config";
+import { resolveMergedTicketId } from "@/lib/tickets/merge";
 import { notifyTicketStatusChange } from "@/lib/tickets/notify-status-change";
 import { resolveTicketPortalUrl } from "@/lib/tickets/portal-url";
 
@@ -32,7 +33,9 @@ export async function PATCH(
     return e as Response;
   }
 
-  const { id: ticketId } = await params;
+  const { id: requestedTicketId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const ticketId = await resolveMergedTicketId(requestedTicketId);
 
   const { allowed } = await checkRateLimit({
     action: "api_ticket_status",

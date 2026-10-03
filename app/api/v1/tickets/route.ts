@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, isNull } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { customers, tickets } from "@/db/schema";
@@ -76,7 +76,12 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const where = eq(tickets.customerId, customer.id);
+  // Merged tickets are hidden, matching the portal — their ids still resolve
+  // via GET /api/v1/tickets/:id, which forwards to the surviving ticket.
+  const where = and(
+    eq(tickets.customerId, customer.id),
+    isNull(tickets.mergedIntoTicketId)
+  );
 
   const [rows, [{ total }]] = await Promise.all([
     db

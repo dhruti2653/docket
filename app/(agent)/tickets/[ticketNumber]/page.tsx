@@ -2,12 +2,13 @@ import {
   ArrowLeftIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  GitMergeIcon,
   LockSimpleIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { and, asc, desc, eq, gt, lt, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { TicketDetailRealtime } from "@/components/agent/ticket-detail-realtime";
 import { DeletableTicketAttachments } from "@/components/common/deletable-ticket-attachments";
 import { LocalDateTime } from "@/components/common/local-datetime";
@@ -62,7 +63,9 @@ import { TicketInfoSidebar } from "./_components/ticket-info-sidebar";
 
 interface Props {
   params: Promise<{ ticketNumber: string }>;
-  searchParams: Promise<TicketListSearchParams>;
+  // `mergedFrom` is set only by the merged-ticket redirect below; it is kept
+  // out of the list params so prev/next links don't carry it along.
+  searchParams: Promise<TicketListSearchParams & { mergedFrom?: string }>;
 }
 
 // Self-join onto `user` for the assignee — `user` is already used unaliased
@@ -183,7 +186,8 @@ export default async function AgentTicketDetailPage({
   searchParams,
 }: Props) {
   const { ticketNumber: ticketNumberParam } = await params;
-  const listParams = await searchParams;
+  const { mergedFrom, ...listParams } = await searchParams;
+  const mergedFromNumber = Number.parseInt(mergedFrom ?? "", 10);
   const session = await requireAgent();
 
   // The URL segment is the ticket number (e.g. /tickets/929), not the
@@ -218,6 +222,7 @@ export default async function AgentTicketDetailPage({
       waitingSince: tickets.waitingSince,
       firstRespondedAt: tickets.firstRespondedAt,
       slaActiveSeconds: tickets.slaActiveSeconds,
+      mergedIntoTicketId: tickets.mergedIntoTicketId,
     })
     .from(tickets)
     .innerJoin(customers, eq(tickets.customerId, customers.id))
@@ -227,6 +232,21 @@ export default async function AgentTicketDetailPage({
 
   if (!ticket) {
     notFound();
+  }
+
+  // A merged ticket is an empty, closed shell — its thread lives on the
+  // ticket it was merged into, so open that one instead.
+  if (ticket.mergedIntoTicketId) {
+    const [target] = await db
+      .select({ ticketNumber: tickets.ticketNumber })
+      .from(tickets)
+      .where(eq(tickets.id, ticket.mergedIntoTicketId))
+      .limit(1);
+    if (target) {
+      redirect(
+        `/tickets/${target.ticketNumber}?mergedFrom=${ticket.ticketNumber}`
+      );
+    }
   }
 
   // Reconstructs the same filtered/sorted result set the agent came from
@@ -389,6 +409,22 @@ export default async function AgentTicketDetailPage({
           </span>
         </div>
       </div>
+
+      {/* Explains the redirect from a merged ticket's number, which would
+          otherwise look like landing on the wrong ticket. Outside the thread's
+          scroll area on purpose: the thread auto-scrolls to the bottom on load,
+          which would push a notice inside it up under the sticky breadcrumb. */}
+      {Number.isInteger(mergedFromNumber) && mergedFromNumber > 0 && (
+        <div
+          // Below lg the whole page scrolls (and jumps to the newest message on
+          // load), so the notice sticks under the breadcrumb to stay visible.
+          className="flex shrink-0 items-center gap-2 border-b border-base-300 bg-base-100 px-4 py-2.5 text-sm text-base-content max-lg:sticky max-lg:top-12 max-lg:z-10 lg:px-8"
+          role="status"
+        >
+          <GitMergeIcon className="size-4 shrink-0 text-base-content-muted" />
+          Ticket #{mergedFromNumber} was merged into this ticket.
+        </div>
+      )}
 
       {/* Two-column row — no gap and no padding on the row itself:
           the divider is the sidebar's own border-l sitting flush

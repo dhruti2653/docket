@@ -25,6 +25,7 @@ export const AUDIT_ACTIONS: { label: string; value: string }[] = [
   { label: "Ticket Deleted", value: "ticket.deleted" },
   { label: "Bulk Update", value: "ticket.bulk_update" },
   { label: "Bulk Delete", value: "ticket.bulk_delete" },
+  { label: "Ticket Merged", value: "ticket.merged" },
   { label: "Canned Response Deleted", value: "canned_response.deleted" },
   { label: "Webhook Created", value: "webhook.created" },
   { label: "Webhook Updated", value: "webhook.updated" },

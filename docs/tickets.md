@@ -260,6 +260,7 @@ Every significant action on a ticket is logged in `ticket_activity` for a full a
 | `tag_added` | Tag added to the ticket |
 | `tag_removed` | Tag removed from the ticket |
 | `ticket_linked` / `ticket_unlinked` | A link to another ticket was added/removed (written on both tickets) |
+| `merged_into` / `merged_from` | This ticket was merged into another / another ticket was merged into this one |
 
 ```
 ticket_activity
@@ -277,23 +278,75 @@ Activity history is displayed chronologically on the ticket detail page for agen
 
 ---
 
-## Linked Tickets
+## Merge & Link
 
-Agents connect related tickets from the **Linked Tickets** sidebar card on the ticket detail
-page. Linking moves nothing — it's a reference for agents only and is never shown to
-customers. Logic lives in `lib/tickets/links.ts`.
+Agent-only actions on the ticket detail page. Logic lives in `lib/tickets/merge.ts` and
+`lib/tickets/links.ts`.
+
+### Merge
+
+"Merge into another ticket" (sidebar) folds a duplicate ticket (the **source**) into
+another ticket (the **target**). Rules, all enforced server-side:
+
+- **Same customer only.** The source's old portal link forwards to the target *with the
+  target's token*; across customers that would hand one customer another's thread.
+- The target must be **open** — the customer is forwarded there and must be able to reply.
+- Neither ticket may already be merged; a ticket can't merge into itself.
+- **Irreversible**, and **silent** — the customer gets no email.
+
+What happens, in one transaction:
+
+1. The source's description becomes a customer comment on the target, back-dated to the
+   source's `createdAt`; the source's opening attachments are attached to that comment.
+2. All source comments and attachments move to the target (storage keys don't change).
+3. Tags are unioned; custom-field values only fill fields the target left empty.
+4. Reply drafts on the source are deleted (they can't move — the same agent may have one on
+   the target).
+5. Links on the source are re-pointed at the target (self-links/duplicates dropped).
+6. Tickets previously merged into the source now point at the target — forwarding is
+   always a single hop.
+7. The source is closed and gets `mergedIntoTicketId` / `mergedAt`. It is **kept**, not
+   deleted, so its id and portal link keep working.
+8. The target's `awaitingReply` / `pendingReplies` are recomputed from the merged thread
+   (`lib/tickets/thread-state.ts`); `firstRespondedAt` keeps the earlier of the two.
+9. An internal note on the target records the source's number and subject; `merged_into` /
+   `merged_from` activity is written on both.
+
+**Forwarding.** Every request for a merged ticket acts on the target:
+the customer portal page redirects (`/ticket/{source}?token=…` → `/ticket/{target}?token=…`),
+and the customer/agent comment, close, reopen and PATCH routes plus every
+`/api/v1/tickets/:id/*` route resolve the id first (`forwardMergedTicket()` /
+`resolveMergedTicketId()`). The agent page `/tickets/{sourceNumber}` redirects to the target.
+Merged tickets are hidden from the agent ticket list, the dashboard counts, reports, the
+customer's "My Tickets" page (and its email), the customer profile popover, and
+`GET /api/v1/tickets?email=`. The agent-only routes (tags, custom fields, drafts, attachment
+delete) forward too, so a tab left open on the merged ticket doesn't write to the hidden shell.
+
+**Concurrency.** Merge locks both tickets and re-checks inside the transaction; a
+conflicting simultaneous merge gets a `409` ("just changed by someone else"). A reply
+saved while a merge is in flight waits for it; if the ticket was merged meanwhile the reply
+is rejected with a `409` asking to resend (its uploads are cleaned up), never stranded on the
+hidden ticket. Deleting a ticket also deletes the tickets merged into it. Merges are also
+recorded in the admin audit log (`ticket.merged`).
+
+**First response.** The target keeps its own `firstRespondedAt`; it only inherits the
+source's when it had none and the source's came after the target was created (so a first
+response can never predate the ticket).
+
+### Link
+
+The **Linked Tickets** sidebar card connects tickets without moving anything. Types:
 
 | Type | On the ticket that added it | On the other ticket |
 |---|---|---|
 | `related_to` | Related to #N | Related to #N |
-| `duplicate_of` | Duplicate of #N | Duplicated by #N |
+| `duplicate_of` | Duplicate of #N | Has duplicate #N |
 | `blocks` | Blocks #N | Blocked by #N |
 
-One `ticket_links` row per link, read from both ends. Rejected: linking a ticket to itself, an
-unknown ticket number, and a second link of the same type between the same pair in either
-direction (so no "A blocks B" plus "B blocks A"). Adding or removing a link writes
-`ticket_linked` / `ticket_unlinked` activity on both tickets. Deleting either ticket deletes
-the link.
+One `ticket_links` row per link, read from both ends. Self-links, links to merged tickets,
+and a second link of the same type between the same pair — in either direction (so no
+"A blocks B" plus "B blocks A") — are rejected. Links are agent-only —
+never shown to customers.
 
 ---
 
@@ -325,6 +378,7 @@ the link.
 | PATCH | `/api/tickets/{id}/reopen` | Customer (token) / Agent | Reopen the ticket |
 | POST | `/api/tickets/{id}/comments` | Customer (token) / Agent | Add a comment or internal note |
 | DELETE | `/api/tickets/{id}` | Admin only | Hard delete (spam removal) |
+| POST | `/api/tickets/{id}/merge` | Agent/Admin | Merge this ticket into another (body: `{ targetTicketNumber }`) |
 | GET / POST | `/api/tickets/{id}/links` | Agent/Admin | List links / add one (body: `{ ticketNumber, type }`) |
 | DELETE | `/api/tickets/{id}/links/{linkId}` | Agent/Admin | Remove a link (from either end) |
 | PATCH | `/api/tickets/bulk` | Admin only | Bulk assign, change status, change priority, or add a tag across up to 200 tickets at once (body: `{ ids, action: "assign" \| "status" \| "priority" \| "tag", value }`) |

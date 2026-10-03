@@ -82,6 +82,7 @@ See [file-uploads.md](./file-uploads.md) for attachment validation details.
 - The `token` query parameter is required.
 - Server looks up the ticket by `id` AND `customerToken`. If neither matches, return a 404 page.
 - No session is created. Token is validated on each page load.
+- If the ticket was **merged** into another (agent action — see [tickets.md § Merge & Link](./tickets.md#merge--link)), a valid link redirects to the surviving ticket. Merges are same-customer only, so this never exposes another customer's ticket. Merged tickets are hidden from "My Tickets" and the sibling-ticket list.
 
 ### What Customers Can See
 

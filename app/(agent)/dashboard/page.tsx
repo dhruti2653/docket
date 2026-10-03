@@ -5,7 +5,7 @@ import {
   HourglassIcon,
   TicketIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -78,6 +78,8 @@ export default async function DashboardPage() {
   const statusCounts = await db
     .select({ status: tickets.status, c: count() })
     .from(tickets)
+    // Merged tickets are hidden from the ticket list these counts link to.
+    .where(isNull(tickets.mergedIntoTicketId))
     .groupBy(tickets.status);
 
   let open = 0;

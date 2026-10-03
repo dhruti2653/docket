@@ -1,5 +1,5 @@
 import { CaretRightIcon, TicketIcon } from "@phosphor-icons/react/dist/ssr";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BrandMark } from "@/components/common/brand-mark";
@@ -50,7 +50,13 @@ export default async function MyTicketsListPage({ params }: Props) {
           createdAt: tickets.createdAt,
         })
         .from(tickets)
-        .where(eq(tickets.customerId, customer.id))
+        // Merged tickets are hidden — their content lives on the survivor.
+        .where(
+          and(
+            eq(tickets.customerId, customer.id),
+            isNull(tickets.mergedIntoTicketId)
+          )
+        )
         .orderBy(desc(tickets.createdAt))
     : [];
   const brandName = resolveBrandName(settings.brandName);

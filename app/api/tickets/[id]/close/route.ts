@@ -10,6 +10,7 @@ import { ticketClosedTemplate } from "@/lib/email/templates/ticket-closed";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { computeSlaTransition } from "@/lib/sla";
 import { getClosedStatus, isClosedStatusSlug } from "@/lib/ticket-config";
+import { forwardMergedTicket } from "@/lib/tickets/merge";
 import { notifyTicketStatusChange } from "@/lib/tickets/notify-status-change";
 import { resolveTicketPortalUrl } from "@/lib/tickets/portal-url";
 
@@ -17,14 +18,20 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: ticketId } = await params;
+  const { id: requestedTicketId } = await params;
 
   let body: { token?: string } = {};
   try {
-    body = (await request.json()) as { token?: string };
+    // `?? {}`: a literal `null` body would otherwise crash on body.token.
+    body = ((await request.json()) as { token?: string } | null) ?? {};
   } catch {
     // no body is fine
   }
+
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const forwarded = await forwardMergedTicket(requestedTicketId, body.token);
+  const ticketId = forwarded.ticketId;
+  body.token = forwarded.token;
 
   const now = new Date();
 

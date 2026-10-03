@@ -12,6 +12,7 @@ import {
   validateCustomFieldInput,
 } from "@/lib/custom-fields";
 import { db } from "@/lib/db";
+import { resolveMergedTicketId } from "@/lib/tickets/merge";
 
 async function requireAgentSession(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -36,7 +37,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { id: ticketId } = await params;
+  const { id: requestedTicketId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const ticketId = await resolveMergedTicketId(requestedTicketId);
   const [ticket] = await db
     .select({ id: tickets.id })
     .from(tickets)

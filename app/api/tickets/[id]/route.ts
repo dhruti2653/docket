@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { ADMIN_ROLE } from "@/config/platform";
@@ -19,6 +19,7 @@ import {
   getTicketPriorities,
   getTicketStatuses,
 } from "@/lib/ticket-config";
+import { resolveMergedTicketId, withMergedShells } from "@/lib/tickets/merge";
 import { notifyTicketStatusChange } from "@/lib/tickets/notify-status-change";
 import {
   dispatchWebhookEvent,
@@ -46,7 +47,9 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { id: requestedId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const id = await resolveMergedTicketId(requestedId);
   const [ticket] = await db
     .select({
       id: tickets.id,
@@ -86,7 +89,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { id: ticketId } = await params;
+  const { id: requestedTicketId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const ticketId = await resolveMergedTicketId(requestedTicketId);
   let body: {
     status?: string;
     category?: string;
@@ -337,11 +342,14 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
+  // Tickets merged into this one go with it (see withMergedShells).
+  const deleteIds = await withMergedShells([ticketId]);
+
   // Delete storage files before DB records
   const attachments = await db
     .select({ storageKey: ticketAttachments.storageKey })
     .from(ticketAttachments)
-    .where(eq(ticketAttachments.ticketId, ticketId));
+    .where(inArray(ticketAttachments.ticketId, deleteIds));
 
   for (const att of attachments) {
     try {
@@ -352,7 +360,7 @@ export async function DELETE(
   }
 
   // Delete ticket (cascade removes comments, activity, attachments)
-  await db.delete(tickets).where(eq(tickets.id, ticketId));
+  await db.delete(tickets).where(inArray(tickets.id, deleteIds));
 
   await audit({
     action: "ticket.deleted",

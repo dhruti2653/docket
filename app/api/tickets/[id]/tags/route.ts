@@ -6,6 +6,7 @@ import { ticketActivity, tickets, ticketTags } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getOrCreateTagId, getTicketTags, normalizeTagName } from "@/lib/tags";
+import { resolveMergedTicketId } from "@/lib/tickets/merge";
 
 const MAX_TAG_LENGTH = 50;
 
@@ -24,7 +25,9 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { id: ticketId } = await params;
+  const { id: requestedTicketId } = await params;
+  // A merged ticket forwards to the ticket it was merged into (lib/tickets/merge.ts).
+  const ticketId = await resolveMergedTicketId(requestedTicketId);
   let body: { name?: string } = {};
   try {
     body = (await request.json()) as typeof body;

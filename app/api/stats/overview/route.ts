@@ -1,4 +1,4 @@
-import { count, inArray, sql } from "drizzle-orm";
+import { count, inArray, isNull, sql } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { tickets } from "@/db/schema";
@@ -19,6 +19,8 @@ export async function GET(_request: NextRequest) {
   const statusCounts = await db
     .select({ status: tickets.status, c: count() })
     .from(tickets)
+    // Merged tickets are hidden from the ticket list these counts link to.
+    .where(isNull(tickets.mergedIntoTicketId))
     .groupBy(tickets.status);
 
   let open = 0;
